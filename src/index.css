@@ -135,3 +135,5 @@ textarea.input { height: auto; min-height: 72px; padding: 12px 14px; resize: ver
 .cat { font-size: 11px; padding: 1px 6px; border-radius: 6px; background: var(--soft); color: var(--ink-2); }
 .bottom-bar { position: sticky; bottom: 0; background: #fff; border-top: 1px solid var(--line); padding: 12px 16px calc(16px + var(--safe-bottom)); display: flex; gap: 8px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.map-reset { position: absolute; right: 10px; top: 10px; height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid var(--line-2); background: #fff; font-size: 12px; color: var(--ink); cursor: pointer; }
+.maplibregl-popup-content { border-radius: 10px; padding: 8px 12px; }
