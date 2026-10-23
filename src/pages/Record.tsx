@@ -3,8 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import { fetchBoard, monthLabel, type BoardTrip } from '../lib/board';
-import { STAGES, companionLabel, type Group, type PrepItem, type ScheduleItem } from '../lib/types';
-import { dayLabel, daysBetween, errorText, nightsDays, ticketNotice, todayStr, won } from '../lib/format';
+import { STAGES, catStyle, companionLabel, type Group, type PrepItem, type ScheduleItem } from '../lib/types';
+import { dayLabel, daysBetween, errorText, nightsDays, ticketNotice, todayStr, won, costLabel } from '../lib/format';
 import { IconBack } from '../components/Icons';
 
 type Tab = 'schedule' | 'prep' | 'cost';
@@ -94,10 +94,10 @@ export default function Record() {
                   <span className="small muted">{s.time ? s.time.slice(0, 5) : '-'}</span>
                   <span className="stack gap4" style={{ minWidth: 0 }}>
                     <span style={{ fontSize: 15 }}>{s.title}</span>
-                    <span className="row gap6"><span className="cat">{s.category}</span>{s.area && <span className="xs muted">{s.area}</span>}</span>
+                    <span className="row gap6"><span className="cat" style={catStyle(s.category)}>{s.category}</span>{s.area && <span className="xs muted">{s.area}</span>}</span>
                     {s.note && <span className="xs muted">{s.note}</span>}
                   </span>
-                  <span className="small muted">{s.cost != null ? won(s.cost) : ''}</span>
+                  <span className="small muted" style={{ textAlign: 'right' }}>{costLabel(s)}</span>
                 </div>
               ))}
             </div>

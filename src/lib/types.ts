@@ -24,6 +24,20 @@ export const STATUS_LABEL: Record<PrepStatus, string> = { todo: '준비 전', do
 export const NEXT_STATUS: Record<PrepStatus, PrepStatus> = { todo: 'doing', doing: 'done', done: 'todo' };
 
 export const CATEGORIES = ['항공', '이동', '숙소', '식사', '관광', '쇼핑', '준비', '기타'] as const;
+export const CATEGORY_COLORS: Record<string, [string, string]> = {
+  항공: ['#E3E9FF', '#2F4BC0'],
+  이동: ['#DDF3F1', '#16766C'],
+  숙소: ['#EFE6FB', '#6B3FB0'],
+  식사: ['#FDEBDD', '#B4561B'],
+  관광: ['#E2F4E3', '#2E7D32'],
+  쇼핑: ['#FCE4EE', '#B0306A'],
+  준비: ['#FFF4D6', '#8A6200'],
+  기타: ['#EEF0F4', '#4E5568'],
+};
+export const catStyle = (c: string) => {
+  const [bg, fg] = CATEGORY_COLORS[c] ?? CATEGORY_COLORS['기타'];
+  return { background: bg, color: fg, fontWeight: 600 };
+};
 
 export interface CityRef {
   id: number;
@@ -74,6 +88,8 @@ export interface ScheduleItem {
   area: string;
   cost: number | null;
   note: string;
+  currency?: string;
+  amount?: number | null;
 }
 
 export interface Profile {

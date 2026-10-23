@@ -158,3 +158,13 @@ textarea.input { height: auto; min-height: 72px; padding: 12px 14px; resize: ver
 .hero .legend { padding: 8px 18px 12px; }
 .lg-land { width: 16px; height: 12px; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; }
 .lg-dot { width: 6px; height: 6px; border-radius: 3px; box-shadow: 0 0 0 1.5px #fff; }
+
+/* iOS date/time inputs: keep inside their box */
+input.input[type='date'], input.input[type='time'] { -webkit-appearance: none; appearance: none; min-width: 0; max-width: 100%; display: block; line-height: 46px; text-align: left; }
+input.input::-webkit-date-and-time-value { text-align: left; margin: 0; }
+.field { min-width: 0; }
+.cost-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
+.cost-row > select.input { width: auto; min-width: 84px; }
+.cost-row > :only-child { grid-column: 1 / -1; }
+.item-edit .field { gap: 4px; }
+.item-edit .field > span { font-size: 12px; font-weight: 500; color: var(--muted); }

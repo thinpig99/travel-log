@@ -76,3 +76,24 @@ export const ticketNotice = (p: { tickets: number; is_admin: boolean } | null) =
   p?.is_admin ? '관리자 계정이라 탑승권이 차감되지 않아요' : `탑승권 1장을 사용해요 · 보유 ${p?.tickets ?? 0}장`;
 export const hasTicket = (p: { tickets: number; is_admin: boolean } | null) => !!p && (p.is_admin || p.tickets > 0);
 export const ticketCount = (p: { tickets: number; is_admin: boolean } | null) => (p?.is_admin ? '무제한' : String(p?.tickets ?? 0));
+
+export const money = (n: number, cur: string) => {
+  try {
+    return new Intl.NumberFormat('ko-KR', { style: 'currency', currency: cur, currencyDisplay: 'narrowSymbol', maximumFractionDigits: 2 }).format(n);
+  } catch {
+    return `${n.toLocaleString('ko-KR')} ${cur}`;
+  }
+};
+export const costLabel = (i: { cost: number | null; currency?: string; amount?: number | null }) => {
+  if (i.cost == null) return '';
+  if (i.currency && i.currency !== 'KRW' && i.amount != null) return `${money(i.amount, i.currency)} · ${won(i.cost)}`;
+  return won(i.cost);
+};
+
+let ratesP: Promise<Record<string, number>> | null = null;
+/** KRW 기준 환율 (1원 = x 외화) */
+export const loadRates = () =>
+  (ratesP ??= fetch('https://open.er-api.com/v6/latest/KRW')
+    .then((r) => r.json())
+    .then((j) => j.rates as Record<string, number>)
+    .catch((e) => { ratesP = null; throw e; }));
