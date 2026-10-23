@@ -8,7 +8,6 @@ export default function Wallet() {
   useEffect(() => {
     refreshProfile();
   }, [refreshProfile]);
-  const used = Math.min(2, profile?.free_trips_used ?? 0);
   const received = profile?.likes_received ?? 0;
   const step = received % 10;
 
@@ -20,7 +19,7 @@ export default function Wallet() {
           <div className="stack gap4" style={{ padding: 16, borderRadius: 16, background: 'var(--ink)', color: '#fff' }}>
             <span className="small" style={{ color: '#c3ccd3' }}>보유 티켓</span>
             <b style={{ fontSize: 30 }}>{profile?.tickets ?? 0}<span style={{ fontSize: 15, fontWeight: 500 }}> 장</span></b>
-            <span className="xs" style={{ color: '#c3ccd3' }}>새 여행 1개에 1장</span>
+            <span className="xs" style={{ color: '#c3ccd3' }}>자세한 여행 1개에 1장</span>
           </div>
           <div className="soft-card stack gap4">
             <span className="small muted">줄 수 있는 좋아요</span>
@@ -42,14 +41,10 @@ export default function Wallet() {
           <span className="small muted">{10 - step}개 더 받으면 티켓 1장이 생겨요 · 지금까지 {received}개</span>
         </div>
 
-        <div className="row between" style={{ padding: '12px 16px', borderRadius: 12, background: 'var(--brand-soft)', color: 'var(--brand-ink)' }}>
-          <span className="small">{used < 2 ? `무료 여행 ${2 - used}회가 남았어요` : '무료 여행 2개를 모두 사용했어요'}</span>
-          <b className="small">{used} / 2</b>
-        </div>
-
         <section className="stack gap8">
           <h2 className="h2">티켓 받는 방법</h2>
           <div className="stack small" style={{ gap: 6 }}>
+            <span>· 가입하면 티켓 2장을 드려요</span>
             <span>· 끝난 여행을 게시판에 공개하고 좋아요 10개를 받기</span>
             <span>· 티켓 구매 (결제는 정식 출시 때 열려요. 테스트 기간에는 운영자가 넣어드려요)</span>
           </div>

@@ -17,12 +17,11 @@ export default function PastTrip() {
   const [detailed, setDetailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const needsTicket = (profile?.free_trips_used ?? 0) >= 2;
   const tickets = profile?.tickets ?? 0;
 
   const save = async (v: PastTripValues) => {
     setErr('');
-    if (detailed && needsTicket && tickets < 1) return setErr('티켓이 없어요. 간단히 기록하거나 지갑에서 티켓을 확인해 주세요.');
+    if (detailed && tickets < 1) return setErr('티켓이 없어요. 간단히 기록하거나 지갑에서 티켓을 확인해 주세요.');
     setBusy(true);
     let tripId = '';
     try {
@@ -86,7 +85,7 @@ export default function PastTrip() {
             <span style={{ color: 'var(--brand)', display: 'flex' }}><IconTicket s={18} /></span>
             <span>
               새 여행처럼 준비·일정·정보 탭이 생겨요. 다녀온 여행이라 준비 항목은 완료 상태로 시작해요.
-              {needsTicket ? ` 티켓 1장을 사용해요 · 보유 ${tickets}장` : ''}
+               티켓 1장을 사용해요 · 보유 {tickets}장
             </span>
           </div>
         )}

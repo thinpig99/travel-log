@@ -172,7 +172,6 @@ function CopySheet({ trip, onClose }: { trip: BoardTrip; onClose: () => void }) 
   const [groupId, setGroupId] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
-  const freeLeft = Math.max(0, 2 - (profile?.free_trips_used ?? 0));
 
   useEffect(() => {
     supabase.from('groups').select('*').then(({ data }) => setGroups((data as Group[]) ?? []));
@@ -203,7 +202,7 @@ function CopySheet({ trip, onClose }: { trip: BoardTrip; onClose: () => void }) 
             {groups.map((g) => <option key={g.id} value={g.id}>{g.name} 그룹과 공유</option>)}
           </select>
         </label>
-        {freeLeft === 0 && <div className="notice">티켓 1장을 사용해요 · 보유 {profile?.tickets ?? 0}장</div>}
+        <div className="notice">티켓 1장을 사용해요 · 보유 {profile?.tickets ?? 0}장</div>
         {err && <p className="error" role="alert">{err}</p>}
         <button className="btn block" disabled={busy} onClick={go}>{busy ? '복제하는 중' : '복제하기'}</button>
       </div>

@@ -29,7 +29,6 @@ export default function NewTrip() {
     supabase.from('groups').select('*').order('created_at').then(({ data }) => setGroups((data as Group[]) ?? []));
   }, []);
 
-  const freeLeft = Math.max(0, 2 - (profile?.free_trips_used ?? 0));
   const tickets = profile?.tickets ?? 0;
   const autoTitle = cities.length ? `${cities.slice(0, 2).map((c) => c.nameKo || c.nameEn).join(', ')} 여행` : '';
 
@@ -120,12 +119,10 @@ export default function NewTrip() {
         )}
       </main>
       <div className="stack gap8" style={{ padding: '12px 16px calc(16px + var(--safe-bottom))', borderTop: '1px solid var(--line)' }}>
-        {freeLeft === 0 && (
-          <div className="notice row gap8">
+                  <div className="notice row gap8">
             <span style={{ color: 'var(--brand)', display: 'flex' }}><IconTicket s={18} /></span>
             티켓 1장을 사용해요 · 보유 티켓 {tickets}장
           </div>
-        )}
         <button className="btn block" disabled={busy} onClick={save}>{busy ? '만드는 중' : '여행 만들기'}</button>
       </div>
     </div>
