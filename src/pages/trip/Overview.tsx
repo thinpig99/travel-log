@@ -4,6 +4,10 @@ import { supabase } from '../../lib/supabase';
 import { errorText, numOrNull, won } from '../../lib/format';
 import type { Companion, Group, PrepItem, ScheduleItem, Trip } from '../../lib/types';
 import CompanionPicker from '../../components/CompanionPicker';
+import CityPicker from '../../components/CityPicker';
+import PastTripForm, { type PastTripValues } from '../../components/PastTripForm';
+import { fetchTripCityObjects, syncTripCities } from '../../lib/trips';
+import type { City } from '../../lib/geo';
 
 interface Props {
   trip: Trip;
@@ -33,9 +37,37 @@ export default function Overview({ trip, prep, sched, groups, isOwner, onChange 
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
+  const [cities, setCities] = useState<City[] | null>(null);
+  const [prevIds, setPrevIds] = useState<number[]>([]);
+
+  const startEdit = async () => {
+    const list = await fetchTripCityObjects(trip.id);
+    setCities(list);
+    setPrevIds(list.map((c) => c.id));
+    setErr('');
+    setEdit(true);
+  };
+
+  const saveSimple = async (v: PastTripValues) => {
+    setBusy(true);
+    setErr('');
+    try {
+      const { cities: next, ...fields } = v;
+      const { error } = await supabase.from('trips').update(fields).eq('id', trip.id);
+      if (error) throw error;
+      await syncTripCities(trip.id, prevIds, next);
+      setEdit(false);
+      onChange();
+    } catch (e) {
+      setErr(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const save = async () => {
     if (!title.trim()) return setErr('여행 이름을 적어주세요.');
+    if (!cities?.length) return setErr('여행할 도시를 하나 이상 골라주세요.');
     setBusy(true);
     setErr('');
     const patch: Partial<Trip> = { title: title.trim(), companion, memo: memo.trim() };
@@ -45,8 +77,14 @@ export default function Overview({ trip, prep, sched, groups, isOwner, onChange 
       if (isOwner) patch.group_id = groupId || null;
     }
     const { error } = await supabase.from('trips').update(patch).eq('id', trip.id);
+    if (error) { setBusy(false); return setErr(errorText(error)); }
+    try {
+      await syncTripCities(trip.id, prevIds, cities);
+    } catch (e) {
+      setBusy(false);
+      return setErr(errorText(e));
+    }
     setBusy(false);
-    if (error) return setErr(errorText(error));
     setEdit(false);
     onChange();
   };
@@ -82,13 +120,34 @@ export default function Overview({ trip, prep, sched, groups, isOwner, onChange 
         </div>
       )}
 
+      {!full && trip.total_cost != null && (
+        <div className="soft-card stack gap8">
+          <div className="row between"><span className="small muted">쓴 돈</span><b style={{ fontSize: 20 }}>{won(trip.total_cost)}</b></div>
+        </div>
+      )}
+
       {!edit ? (
         <div className="stack">
           {trip.memo && <p className="small" style={{ padding: '4px 0 12px' }}>{trip.memo}</p>}
-          <button className="btn secondary block" onClick={() => setEdit(true)}>여행 정보 고치기</button>
+          <button className="btn secondary block" onClick={startEdit}>여행 정보 고치기</button>
+        </div>
+      ) : !full ? (
+        <div className="stack gap16">
+          <PastTripForm
+            initial={{ title: trip.title, cities: cities ?? [], start_date: trip.start_date, end_date: trip.end_date, year: trip.year, month: trip.month, companion: trip.companion, total_cost: trip.total_cost, memo: trip.memo }}
+            onSubmit={saveSimple}
+          >
+            {(submit) => (
+              <div className="row gap8">
+                <button className="btn secondary" onClick={() => setEdit(false)}>취소</button>
+                <button className="btn grow" disabled={busy} onClick={submit}>저장</button>
+              </div>
+            )}
+          </PastTripForm>
         </div>
       ) : (
         <div className="stack gap12">
+          <div className="field"><span>여행할 도시</span><CityPicker value={cities ?? []} onChange={setCities} /></div>
           <label className="field"><span>여행 이름</span><input className="input" value={title} maxLength={40} onChange={(e) => setTitle(e.target.value)} /></label>
           {full && (
             <div className="two">

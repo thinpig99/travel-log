@@ -62,7 +62,7 @@ export default function TripPage() {
           <span className="small muted">{cities.join(', ')}</span>
           <h1 className="title">{trip.title}</h1>
           <span className="small muted">
-            {trip.kind === 'full' && trip.start_date && trip.end_date
+            {trip.start_date && trip.end_date
               ? `${rangeLabel(trip.start_date, trip.end_date)} · ${nightsDays(trip.start_date, trip.end_date)}`
               : whenLabel(trip)}
             {' · '}

@@ -43,6 +43,7 @@ export interface Trip {
   year: number | null;
   month: number | null;
   budget: number | null;
+  total_cost: number | null;
   headcount: number;
   memo: string;
   visibility: 'private' | 'group' | 'public';
