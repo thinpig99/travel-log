@@ -193,9 +193,17 @@ export default function Overview({ trip, prep, sched, groups, isOwner, onChange 
                   <input className="input" type="date" value={end} min={start || undefined} onChange={(e) => setEnd(e.target.value)} />
                 </label>
               </div>
-              {(start !== trip.start_date || end !== trip.end_date) && (
-                <span className="xs muted">날짜를 바꾸면 일정 탭의 일정도 같은 일차에 맞춰 함께 옮겨져요. 줄어든 기간 밖의 일정은 마지막 날로 모여요.</span>
-              )}
+              <div className="warn-box" role="note">
+                <b>날짜를 바꾸기 전에 확인해 주세요</b>
+                <span>일정 탭의 일정은 같은 일차에 맞춰 함께 옮겨져요.</span>
+                <span>기간이 줄어들면 넘치는 일정은 마지막 날로 모여요.</span>
+                {(() => {
+                  if (!start || !end || !trip.start_date) return null;
+                  const shift = Math.round((parseDate(start).getTime() - parseDate(trip.start_date).getTime()) / 864e5);
+                  const over = sched.filter((i) => { const d = parseDate(i.day); d.setDate(d.getDate() + shift); return toDateStr(d) > end; }).length;
+                  return over > 0 ? <b>지금 날짜로 저장하면 일정 {over}개가 마지막 날로 옮겨져요.</b> : null;
+                })()}
+              </div>
             </div>
           )}
           {full && (

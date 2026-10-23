@@ -211,3 +211,5 @@ textarea.input.note-area { min-height: 220px; line-height: 1.6; }
 .swipe-pane.from-left { animation: swipe-in-l .28s ease; }
 @keyframes swipe-in-r { from { transform: translateX(40%); opacity: .3; } to { transform: none; opacity: 1; } }
 @keyframes swipe-in-l { from { transform: translateX(-40%); opacity: .3; } to { transform: none; opacity: 1; } }
+.warn-box { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 12px; background: rgba(226, 75, 74, 0.1); border: 1px solid rgba(226, 75, 74, 0.25); color: var(--red-ink); font-size: 13px; line-height: 1.5; }
+.warn-box b { font-size: 13px; }
