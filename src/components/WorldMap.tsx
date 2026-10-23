@@ -24,18 +24,37 @@ const toGeo = (v: Visit[]): FeatureCollection => ({
   })),
 });
 
-const countryFilter = (v: Visit[]): ML.FilterSpecification =>
-  ['in', ['get', 'c'], ['literal', [...new Set(v.map((x) => x.country_code))]]];
+export const COUNTRY_SHADES = ['#C9E8E1', '#93CFC2', '#5DB3A0'];
+const LAND = '#DCE3E7';
+
+// 나라별 방문 횟수 → 색 (1회, 2회, 3회 이상)
+const countryColor = (counts: Record<string, number>): ML.DataDrivenPropertyValueSpecification<string> => {
+  const entries = Object.entries(counts).filter(([, n]) => n > 0);
+  if (!entries.length) return LAND;
+  const match: unknown[] = ['match', ['get', 'c']];
+  for (const [code, n] of entries) match.push(code, COUNTRY_SHADES[Math.min(n, 3) - 1]);
+  match.push(LAND);
+  return match as ML.DataDrivenPropertyValueSpecification<string>;
+};
+
+const derivedCounts = (v: Visit[]) => {
+  const out: Record<string, number> = {};
+  v.forEach((x) => (out[x.country_code] = Math.max(out[x.country_code] ?? 0, x.visits)));
+  return out;
+};
 
 const worldZoom = (w: number) => Math.log2(Math.max(w, 200) / 512) + 0.15;
 
-export default function WorldMap({ visits, onCity, suffix = '번 다녀왔어요' }: { visits: Visit[]; onCity?: (id: number) => void; suffix?: string }) {
+export default function WorldMap({ visits, countries, onCity, suffix = '번 다녀왔어요' }: { visits: Visit[]; countries?: Record<string, number>; onCity?: (id: number) => void; suffix?: string }) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<ML.Map | null>(null);
   const ready = useRef(false);
   const latest = useRef(visits);
   const onCityRef = useRef(onCity);
   const suffixRef = useRef(suffix);
+  const counts = countries ?? derivedCounts(visits);
+  const latestCounts = useRef(counts);
+  latestCounts.current = counts;
   latest.current = visits;
   onCityRef.current = onCity;
   suffixRef.current = suffix;
@@ -66,8 +85,7 @@ export default function WorldMap({ visits, onCity, suffix = '번 다녀왔어요
       const world = await loadWorld();
       if (!map.current) return;
       m.addSource('world', { type: 'geojson', data: world });
-      m.addLayer({ id: 'land', type: 'fill', source: 'world', paint: { 'fill-color': '#DCE3E7', 'fill-outline-color': '#FFFFFF' } });
-      m.addLayer({ id: 'land-visited', type: 'fill', source: 'world', filter: countryFilter(latest.current), paint: { 'fill-color': '#B3DDD3', 'fill-outline-color': '#FFFFFF' } });
+      m.addLayer({ id: 'land', type: 'fill', source: 'world', paint: { 'fill-color': countryColor(latestCounts.current), 'fill-outline-color': '#FFFFFF' } });
       m.addSource('visits', { type: 'geojson', data: toGeo(latest.current) });
       m.addLayer({
         id: 'visits-halo',
@@ -113,8 +131,8 @@ export default function WorldMap({ visits, onCity, suffix = '번 다녀왔어요
     const m = map.current;
     if (!m || !ready.current) return;
     (m.getSource('visits') as ML.GeoJSONSource | undefined)?.setData(toGeo(visits));
-    m.setFilter('land-visited', countryFilter(visits));
-  }, [visits]);
+    m.setPaintProperty('land', 'fill-color', countryColor(counts));
+  }, [visits, JSON.stringify(counts)]);
 
   const reset = () => {
     const m = map.current;

@@ -13,14 +13,16 @@ export default function Home() {
   const { profile } = useAuth();
   const nav = useNavigate();
   const [visits, setVisits] = useState<Visit[]>([]);
+  const [countryVisits, setCountryVisits] = useState<Record<string, number>>({});
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [cityFilter, setCityFilter] = useState<number | null>(null);
 
   useEffect(() => {
-    Promise.all([supabase.rpc('my_city_visits'), fetchTrips()]).then(([v, t]) => {
+    Promise.all([supabase.rpc('my_city_visits'), fetchTrips(), supabase.rpc('my_country_visits')]).then(([v, t, c]) => {
       setVisits((v.data as Visit[]) ?? []);
+      setCountryVisits(Object.fromEntries(((c.data ?? []) as { country_code: string; visits: number }[]).map((r) => [r.country_code, r.visits])));
       setTrips(t);
       setLoaded(true);
     });
@@ -53,11 +55,17 @@ export default function Home() {
         </div>
 
         <div className="map-card">
-          <WorldMap visits={visits} onCity={setCityFilter} />
+          <WorldMap visits={visits} countries={countryVisits} onCity={setCityFilter} />
           <div className="legend">
-            <span><i className="dot" style={{ background: 'var(--v1)' }} />1회</span>
-            <span><i className="dot" style={{ background: 'var(--v2)' }} />2회</span>
-            <span><i className="dot" style={{ background: 'var(--v3)' }} />3회 이상</span>
+            {[['1회', '#C9E8E1', 'var(--v1)'], ['2회', '#93CFC2', 'var(--v2)'], ['3회 이상', '#5DB3A0', 'var(--v3)']].map(([l, land, dot]) => (
+              <span key={l} className="row gap4">
+                <i aria-hidden="true" style={{ width: 16, height: 12, borderRadius: 3, background: land, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <i style={{ width: 6, height: 6, borderRadius: 3, background: dot, boxShadow: '0 0 0 1.5px #fff' }} />
+                </i>
+                {l}
+              </span>
+            ))}
+            <span className="xs" style={{ marginLeft: 'auto' }}>나라는 면, 도시는 점</span>
           </div>
         </div>
 
