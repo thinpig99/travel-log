@@ -53,7 +53,6 @@ export default function PastTrip() {
     <div className="screen">
       <div className="topbar">
         <button className="icon-btn" aria-label="닫기" onClick={() => nav(-1)}><IconX s={22} /></button>
-        <span className="small" style={{ color: 'var(--brand)', fontWeight: 500, paddingRight: 12 }}>무료</span>
       </div>
       <main className="page" style={{ paddingTop: 8 }}>
         <div className="stack gap4">

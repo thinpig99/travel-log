@@ -203,7 +203,7 @@ function CopySheet({ trip, onClose }: { trip: BoardTrip; onClose: () => void }) 
             {groups.map((g) => <option key={g.id} value={g.id}>{g.name} 그룹과 공유</option>)}
           </select>
         </label>
-        <div className="notice">{freeLeft > 0 ? `무료 여행 ${freeLeft}회 중 1회를 사용해요` : `티켓 1장을 사용해요 · 보유 ${profile?.tickets ?? 0}장`}</div>
+        {freeLeft === 0 && <div className="notice">티켓 1장을 사용해요 · 보유 {profile?.tickets ?? 0}장</div>}
         {err && <p className="error" role="alert">{err}</p>}
         <button className="btn block" disabled={busy} onClick={go}>{busy ? '복제하는 중' : '복제하기'}</button>
       </div>

@@ -120,12 +120,12 @@ export default function NewTrip() {
         )}
       </main>
       <div className="stack gap8" style={{ padding: '12px 16px calc(16px + var(--safe-bottom))', borderTop: '1px solid var(--line)' }}>
-        <div className="notice row gap8">
-          <span style={{ color: 'var(--brand)', display: 'flex' }}><IconTicket s={18} /></span>
-          {freeLeft > 0
-            ? `무료 여행 ${freeLeft}회 남음 · 만들면 좋아요 쿠폰 1개를 드려요`
-            : `티켓 1장을 사용해요 · 보유 티켓 ${tickets}장`}
-        </div>
+        {freeLeft === 0 && (
+          <div className="notice row gap8">
+            <span style={{ color: 'var(--brand)', display: 'flex' }}><IconTicket s={18} /></span>
+            티켓 1장을 사용해요 · 보유 티켓 {tickets}장
+          </div>
+        )}
         <button className="btn block" disabled={busy} onClick={save}>{busy ? '만드는 중' : '여행 만들기'}</button>
       </div>
     </div>

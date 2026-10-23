@@ -129,14 +129,14 @@ export default function Home() {
               <span style={{ color: 'var(--brand)' }}><IconTemplate /></span>
               <span className="stack gap4">
                 <b>새 여행 준비</b>
-                <span className="xs muted">템플릿으로 준비와 일정을 정리해요 · 무료 {Math.max(0, 2 - (profile?.free_trips_used ?? 0))}회 남음</span>
+                <span className="xs muted">템플릿으로 준비와 일정을 정리해요</span>
               </span>
             </button>
             <button className="sheet-option" onClick={() => nav('/past/new')}>
               <span style={{ color: 'var(--brand)' }}><IconPin /></span>
               <span className="stack gap4">
                 <b>지난 여행 기록</b>
-                <span className="xs muted">어디를, 언제, 누구와. 무료</span>
+                <span className="xs muted">어디를, 언제, 누구와 다녀왔는지 남겨요</span>
               </span>
             </button>
           </div>
