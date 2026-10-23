@@ -9,7 +9,7 @@ import PastTripForm, { type PastTripValues } from '../../components/PastTripForm
 import { fetchTripCityObjects, syncTripCities } from '../../lib/trips';
 import type { City } from '../../lib/geo';
 import { useAuth } from '../../lib/auth';
-import { hasTicket, ticketNotice, todayStr, dayLabel, nightsDays } from '../../lib/format';
+import { hasTicket, ticketNotice, todayStr, dayLabel, nightsDays, daysBetween, parseDate, toDateStr } from '../../lib/format';
 import TripMap from '../../components/TripMap';
 import { computeRoute, computeStays, type Stay } from '../../lib/stays';
 
@@ -35,6 +35,8 @@ export default function Overview({ trip, prep, sched, groups, isOwner, onChange 
   const [title, setTitle] = useState(trip.title);
   const [budget, setBudget] = useState(trip.budget ? trip.budget.toLocaleString('ko-KR') : '');
   const [headcount, setHeadcount] = useState(String(trip.headcount));
+  const [start, setStart] = useState(trip.start_date ?? '');
+  const [end, setEnd] = useState(trip.end_date ?? '');
   const [companion, setCompanion] = useState<Companion>(trip.companion);
   const [groupId, setGroupId] = useState(trip.group_id ?? '');
   const [memo, setMemo] = useState(trip.memo);
@@ -48,6 +50,8 @@ export default function Overview({ trip, prep, sched, groups, isOwner, onChange 
     const list = await fetchTripCityObjects(trip.id);
     setCities(list);
     setPrevIds(list.map((c) => c.id));
+    setStart(trip.start_date ?? '');
+    setEnd(trip.end_date ?? '');
     setErr('');
     setEdit(true);
   };
@@ -72,6 +76,12 @@ export default function Overview({ trip, prep, sched, groups, isOwner, onChange 
   const save = async () => {
     if (!title.trim()) return setErr('여행 이름을 적어주세요.');
     if (!cities?.length) return setErr('여행할 도시를 하나 이상 골라주세요.');
+    const datesChanged = full && (start !== trip.start_date || end !== trip.end_date);
+    if (datesChanged) {
+      if (!start || !end) return setErr('출발일과 도착일을 골라주세요.');
+      if (end < start) return setErr('도착일이 출발일보다 빨라요.');
+      if (trip.end_date! >= todayStr() && end < todayStr()) return setErr('도착일은 오늘 이후로 골라주세요. 이미 끝난 여행으로 바꿀 수는 없어요.');
+    }
     setBusy(true);
     setErr('');
     const patch: Partial<Trip> = { title: title.trim(), companion, memo: memo.trim() };
@@ -82,6 +92,10 @@ export default function Overview({ trip, prep, sched, groups, isOwner, onChange 
     }
     const { error } = await supabase.from('trips').update(patch).eq('id', trip.id);
     if (error) { setBusy(false); return setErr(errorText(error)); }
+    if (datesChanged) {
+      const { error: de } = await supabase.rpc('change_trip_dates', { tid: trip.id, p_start: start, p_end: end });
+      if (de) { setBusy(false); return setErr(errorText(de)); }
+    }
     try {
       await syncTripCities(trip.id, prevIds, cities);
     } catch (e) {
@@ -169,6 +183,21 @@ export default function Overview({ trip, prep, sched, groups, isOwner, onChange 
         <div className="stack gap12">
           <div className="field"><span>여행할 도시</span><CityPicker value={cities ?? []} onChange={setCities} /></div>
           <label className="field"><span>여행 이름</span><input className="input" value={title} maxLength={40} onChange={(e) => setTitle(e.target.value)} /></label>
+          {full && (
+            <div className="stack gap8">
+              <div className="two">
+                <label className="field"><span>출발</span>
+                  <input className="input" type="date" value={start} onChange={(e) => { const v = e.target.value; const len = trip.start_date && trip.end_date ? daysBetween(trip.start_date, trip.end_date).length - 1 : 0; setStart(v); if (v && (!end || end < v || end === trip.end_date)) { const d = parseDate(v); d.setDate(d.getDate() + len); setEnd(toDateStr(d)); } }} />
+                </label>
+                <label className="field"><span>도착</span>
+                  <input className="input" type="date" value={end} min={start || undefined} onChange={(e) => setEnd(e.target.value)} />
+                </label>
+              </div>
+              {(start !== trip.start_date || end !== trip.end_date) && (
+                <span className="xs muted">날짜를 바꾸면 일정 탭의 일정도 같은 일차에 맞춰 함께 옮겨져요. 줄어든 기간 밖의 일정은 마지막 날로 모여요.</span>
+              )}
+            </div>
+          )}
           {full && (
             <div className="two">
               <label className="field"><span>총 예산 (원)</span><input className="input" inputMode="numeric" value={budget} onChange={(e) => { const n = numOrNull(e.target.value); setBudget(n == null ? '' : n.toLocaleString('ko-KR')); }} /></label>
