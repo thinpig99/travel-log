@@ -7,6 +7,7 @@ import { companionLabel, type Group, type PrepItem, type ScheduleItem, type Trip
 import { nightsDays, rangeLabel } from '../lib/format';
 import { IconBack } from '../components/Icons';
 import Flags from '../components/Flags';
+import SwipeTabs from '../components/SwipeTabs';
 import Overview from './trip/Overview';
 import Prep from './trip/Prep';
 import Schedule from './trip/Schedule';
@@ -15,6 +16,7 @@ import { todayStr } from '../lib/format';
 import { Link } from 'react-router-dom';
 
 type Tab = 'overview' | 'prep' | 'schedule' | 'info';
+const TABS: Tab[] = ['overview', 'prep', 'schedule', 'info'];
 
 export default function TripPage() {
   const { id } = useParams();
@@ -26,7 +28,7 @@ export default function TripPage() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [missing, setMissing] = useState(false);
   const [params, setParams] = useSearchParams();
-  const tab = (['overview', 'prep', 'schedule', 'info'].includes(params.get('tab') ?? '') ? params.get('tab') : 'overview') as Tab;
+  const tab = (TABS.includes((params.get('tab') ?? '') as Tab) ? params.get('tab') : 'overview') as Tab;
   const setTab = (t: Tab) => setParams(t === 'overview' ? {} : { tab: t }, { replace: true });
 
   const load = useCallback(async () => {
@@ -82,10 +84,12 @@ export default function TripPage() {
                 <button key={k} role="tab" aria-selected={tab === k} className={`tab ${tab === k ? 'on' : ''}`} onClick={() => setTab(k)}>{l}</button>
               ))}
             </div>
+            <SwipeTabs tabs={TABS} tab={tab} onChange={setTab}>
             {tab === 'overview' && <Overview trip={trip} prep={prep} sched={sched} groups={groups} isOwner={isOwner} onChange={load} />}
             {tab === 'prep' && <Prep trip={trip} items={prep} setItems={setPrep} />}
             {tab === 'schedule' && <Schedule trip={trip} items={sched} setItems={setSched} />}
             {tab === 'info' && <Info trip={trip} />}
+            </SwipeTabs>
           </>
         )}
       </main>

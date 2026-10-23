@@ -302,6 +302,8 @@ function StayEditor({ trip, stay, onDone, onCancel }: { trip: Trip; stay: Stay; 
   const [busy, setBusy] = useState(false);
   const save = async () => {
     if (arrive && depart && depart < arrive) return setErr('떠나는 날이 도착한 날보다 빨라요.');
+    const out = (d: string) => !!d && ((!!trip.start_date && d < trip.start_date) || (!!trip.end_date && d > trip.end_date));
+    if (out(arrive) || out(depart)) return setErr('여행 기간 안의 날짜로 골라주세요.');
     setBusy(true);
     const { error } = await supabase.from('trip_cities')
       .update({ arrive: arrive || null, depart: depart || arrive || null, note: note.trim() })

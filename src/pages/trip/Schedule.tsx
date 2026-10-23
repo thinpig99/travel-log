@@ -48,7 +48,7 @@ export default function Schedule({ trip, items, setItems }: Props) {
 
   return (
     <div className="stack gap12">
-      <div className="row gap6" style={{ overflowX: 'auto', paddingBottom: 2 }}>
+      <div className="row gap6 no-swipe" style={{ overflowX: 'auto', paddingBottom: 2 }}>
         {days.map((d, i) => (
           <button key={d} className={`pill ${d === day ? 'on' : ''}`} onClick={() => { setDay(d); setOpen(null); setAdding(false); }}>
             {i + 1}일차
