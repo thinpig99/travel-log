@@ -65,6 +65,7 @@ export const errorText = (e: unknown) => {
   if (m.includes('NOT_FINISHED')) return '여행이 끝난 다음 날부터 공개할 수 있어요.';
   if (m.includes('USE_PUBLISH')) return '공개 설정은 여행 마무리 화면에서 바꿔주세요.';
   if (m.includes('ALREADY_FULL')) return '이미 자세히 기록 중인 여행이에요.';
+  if (m.includes('END_IN_PAST')) return '이미 끝난 날짜예요. 여행이 오늘 이후에 끝나도록 골라주세요.';
   if (m.includes('DATES_REQUIRED')) return '다녀온 기간을 골라주세요.';
   if (m.includes('NICKNAME_TAKEN')) return '이미 쓰고 있는 닉네임이에요.';
   if (m.includes('NICKNAME_INVALID')) return '닉네임은 한글, 영문, 숫자, _ 로 2~16자예요.';

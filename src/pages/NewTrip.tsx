@@ -37,6 +37,7 @@ export default function NewTrip() {
     if (!cities.length) return setErr('여행할 도시를 하나 이상 골라주세요.');
     if (!start || !end) return setErr('출발일과 도착일을 골라주세요.');
     if (end < start) return setErr('도착일이 출발일보다 빨라요.');
+    if (end < todayStr()) return setErr('이미 끝난 여행은 홈의 "지난 여행 기록"으로 남겨주세요. 도착일은 오늘 이후로 골라주세요.');
     setBusy(true);
     try {
       await Promise.all(cities.map(ensureCity));
@@ -82,11 +83,11 @@ export default function NewTrip() {
         <div className="two">
           <label className="field">
             <span>출발</span>
-            <input className="input" type="date" value={start} min={todayStr()} onChange={(e) => { setStart(e.target.value); if (!end || end < e.target.value) setEnd(e.target.value); }} />
+            <input className="input" type="date" value={start} onChange={(e) => { setStart(e.target.value); if (!end || end < e.target.value) setEnd(e.target.value); }} />
           </label>
           <label className="field">
             <span>도착</span>
-            <input className="input" type="date" value={end} min={start || todayStr()} onChange={(e) => setEnd(e.target.value)} />
+            <input className="input" type="date" value={end} min={start && start > todayStr() ? start : todayStr()} onChange={(e) => setEnd(e.target.value)} />
           </label>
         </div>
         <div className="two">

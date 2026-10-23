@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import { fetchBoard, monthLabel, type BoardTrip } from '../lib/board';
 import { STAGES, catStyle, companionLabel, type Group, type PrepItem, type ScheduleItem } from '../lib/types';
-import { dayLabel, daysBetween, errorText, nightsDays, ticketNotice, todayStr, won, costLabel } from '../lib/format';
+import { dayLabel, daysBetween, errorText, nightsDays, parseDate, ticketNotice, toDateStr, todayStr, won, costLabel } from '../lib/format';
 import { IconBack } from '../components/Icons';
 
 type Tab = 'schedule' | 'prep' | 'cost';
@@ -179,6 +179,9 @@ function CopySheet({ trip, onClose }: { trip: BoardTrip; onClose: () => void }) 
 
   const go = async () => {
     if (!start) return setErr('출발일을 골라주세요.');
+    const endD = parseDate(start);
+    endD.setDate(endD.getDate() + daysBetween(trip.start_date, trip.end_date).length - 1);
+    if (toDateStr(endD) < todayStr()) return setErr('이미 끝나는 일정이에요. 여행이 오늘 이후에 끝나도록 출발일을 골라주세요.');
     setBusy(true);
     setErr('');
     const { data, error } = await supabase.rpc('copy_trip', { src: trip.id, p_start: start, p_title: title, p_group_id: groupId || null });
@@ -194,7 +197,7 @@ function CopySheet({ trip, onClose }: { trip: BoardTrip; onClose: () => void }) 
         <h2 className="h2">내 여행으로 복제</h2>
         <p className="xs muted">준비 항목과 일정이 복사돼요. 준비 비용은 비워두고, 일정은 출발일에 맞춰 날짜가 옮겨져요.</p>
         <label className="field"><span>여행 이름</span><input className="input" value={title} maxLength={40} onChange={(e) => setTitle(e.target.value)} /></label>
-        <label className="field"><span>출발일 ({nightsDays(trip.start_date, trip.end_date)})</span><input className="input" type="date" min={todayStr()} value={start} onChange={(e) => setStart(e.target.value)} /></label>
+        <label className="field"><span>출발일 ({nightsDays(trip.start_date, trip.end_date)})</span><input className="input" type="date" value={start} onChange={(e) => setStart(e.target.value)} /></label>
         <label className="field">
           <span>함께 볼 사람</span>
           <select className="input" value={groupId} onChange={(e) => setGroupId(e.target.value)}>

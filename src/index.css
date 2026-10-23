@@ -205,7 +205,7 @@ textarea.input.note-area { min-height: 220px; line-height: 1.6; }
 .tl-item.done { border-left-color: var(--brand); }
 .tl-add { align-self: flex-start; padding: 10px 0 0 4px; font-size: 13px; }
 .ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.swipe-box { overflow-x: clip; touch-action: pan-y; margin: 0 -16px; padding: 0 16px; }
+.swipe-box { flex: 1; min-height: 50vh; overflow-x: clip; touch-action: pan-y; margin: 0 -16px; padding: 0 16px; }
 .swipe-pane { will-change: transform; }
 .swipe-pane.from-right { animation: swipe-in-r .28s ease; }
 .swipe-pane.from-left { animation: swipe-in-l .28s ease; }
