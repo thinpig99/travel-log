@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import { fetchTrips, isUpcoming, sortKey, tripCities, whenLabel } from '../lib/trips';
 import { companionLabel, type Trip } from '../lib/types';
-import { dday, rangeLabel } from '../lib/format';
+import { dday, rangeLabel, ticketCount } from '../lib/format';
 import WorldMap, { type Visit } from '../components/WorldMap';
 import TabBar from '../components/TabBar';
 import { IconPin, IconPlus, IconTemplate, IconTicket } from '../components/Icons';
@@ -48,9 +48,9 @@ export default function Home() {
             <span className="small muted">{profile?.display_name ? `안녕하세요, ${profile.display_name}님` : '안녕하세요'}</span>
             <h1 className="title">내 여행 지도</h1>
           </div>
-          <Link to="/wallet" className="pill" style={{ height: 36, gap: 6, color: 'var(--ink)', fontWeight: 500 }} aria-label={`보유 티켓 ${profile?.tickets ?? 0}장`}>
+          <Link to="/wallet" className="pill" style={{ height: 36, gap: 6, color: 'var(--ink)', fontWeight: 500 }} aria-label={`보유 티켓 ${ticketCount(profile)}`}>
             <span style={{ color: 'var(--brand)', display: 'flex' }}><IconTicket s={16} /></span>
-            티켓 {profile?.tickets ?? 0}
+            티켓 {ticketCount(profile)}
           </Link>
         </div>
 

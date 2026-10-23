@@ -41,10 +41,28 @@ export default function Me() {
     load();
   }, [load]);
 
+  const [nameErr, setNameErr] = useState('');
+  const [copied, setCopied] = useState(false);
   const saveName = async () => {
-    await supabase.rpc('set_display_name', { p_name: name });
+    setNameErr('');
+    const { error } = await supabase.rpc('set_display_name', { p_name: name.trim() });
+    if (error) return setNameErr(errorText(error));
     await refreshProfile();
     setEditName(false);
+  };
+  const shareCode = async () => {
+    const code = profile?.display_name ?? '';
+    const text = `여행 지도에 가입할 때 추천인 닉네임에 "${code}"를 넣으면 티켓과 좋아요 쿠폰을 하나씩 더 받아요. ${window.location.origin}`;
+    try {
+      if (navigator.share) await navigator.share({ text });
+      else {
+        await navigator.clipboard.writeText(code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }
+    } catch {
+      /* 공유 창을 닫은 경우 */
+    }
   };
 
   const createGroup = async () => {
@@ -91,7 +109,7 @@ export default function Me() {
           <div className="stack gap4 grow">
             {editName ? (
               <div className="row gap8">
-                <input className="input grow" value={name} autoFocus maxLength={40} onChange={(e) => setName(e.target.value)} aria-label="이름" />
+                <input className="input grow" value={name} autoFocus maxLength={16} onChange={(e) => setName(e.target.value.replace(/\s/g, ''))} aria-label="닉네임" />
                 <button className="btn small" onClick={saveName}>저장</button>
               </div>
             ) : (
@@ -101,7 +119,25 @@ export default function Me() {
               </>
             )}
           </div>
-          {!editName && <button className="link-btn" onClick={() => { setName(profile?.display_name ?? ''); setEditName(true); }}>이름 바꾸기</button>}
+          {!editName && <button className="link-btn" onClick={() => { setName(profile?.display_name ?? ''); setNameErr(''); setEditName(true); }}>닉네임 바꾸기</button>}
+        </div>
+        {editName && (
+          <p className="xs muted" style={{ marginTop: -8 }}>
+            한글, 영문, 숫자, _ 로 2~16자. 닉네임이 추천인 코드라서, 바꾸면 이전 닉네임으로는 추천되지 않아요.
+          </p>
+        )}
+        {nameErr && <p className="error" role="alert" style={{ marginTop: -8 }}>{nameErr}</p>}
+
+        <div className="card stack gap8">
+          <div className="row between">
+            <span className="small muted">내 추천인 코드</span>
+            <span className="xs muted">추천 보상 {Math.min(profile?.referral_count ?? 0, 10)}/10명</span>
+          </div>
+          <div className="row between gap8">
+            <b style={{ fontSize: 20 }}>{profile?.display_name}</b>
+            <button className="btn small" onClick={shareCode}>{copied ? '복사했어요' : '공유하기'}</button>
+          </div>
+          <span className="xs muted">친구가 가입할 때 이 닉네임을 넣으면 둘 다 티켓 1장과 좋아요 쿠폰 1개를 받아요.</span>
         </div>
 
         <div className="two">

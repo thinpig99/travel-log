@@ -84,6 +84,9 @@ export interface Profile {
   like_coupons: number;
   free_trips_used: number;
   likes_received: number;
+  is_admin: boolean;
+  referral_count: number;
+  referred_by: string | null;
 }
 
 export interface Group {

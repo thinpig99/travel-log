@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import { ensureCity, type City } from '../lib/geo';
-import { errorText, numOrNull, todayStr } from '../lib/format';
+import { errorText, numOrNull, ticketNotice, todayStr } from '../lib/format';
 import type { Companion, Group } from '../lib/types';
 import CityPicker from '../components/CityPicker';
 import CompanionPicker from '../components/CompanionPicker';
@@ -29,7 +29,6 @@ export default function NewTrip() {
     supabase.from('groups').select('*').order('created_at').then(({ data }) => setGroups((data as Group[]) ?? []));
   }, []);
 
-  const tickets = profile?.tickets ?? 0;
   const autoTitle = cities.length ? `${cities.slice(0, 2).map((c) => c.nameKo || c.nameEn).join(', ')} 여행` : '';
 
   const save = async () => {
@@ -121,7 +120,7 @@ export default function NewTrip() {
       <div className="stack gap8" style={{ padding: '12px 16px calc(16px + var(--safe-bottom))', borderTop: '1px solid var(--line)' }}>
                   <div className="notice row gap8">
             <span style={{ color: 'var(--brand)', display: 'flex' }}><IconTicket s={18} /></span>
-            티켓 1장을 사용해요 · 보유 티켓 {tickets}장
+            {ticketNotice(profile)}
           </div>
         <button className="btn block" disabled={busy} onClick={save}>{busy ? '만드는 중' : '여행 만들기'}</button>
       </div>

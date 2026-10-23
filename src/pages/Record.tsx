@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import { fetchBoard, monthLabel, type BoardTrip } from '../lib/board';
 import { STAGES, companionLabel, type Group, type PrepItem, type ScheduleItem } from '../lib/types';
-import { dayLabel, daysBetween, errorText, nightsDays, todayStr, won } from '../lib/format';
+import { dayLabel, daysBetween, errorText, nightsDays, ticketNotice, todayStr, won } from '../lib/format';
 import { IconBack } from '../components/Icons';
 
 type Tab = 'schedule' | 'prep' | 'cost';
@@ -202,7 +202,7 @@ function CopySheet({ trip, onClose }: { trip: BoardTrip; onClose: () => void }) 
             {groups.map((g) => <option key={g.id} value={g.id}>{g.name} 그룹과 공유</option>)}
           </select>
         </label>
-        <div className="notice">티켓 1장을 사용해요 · 보유 {profile?.tickets ?? 0}장</div>
+        <div className="notice">{ticketNotice(profile)}</div>
         {err && <p className="error" role="alert">{err}</p>}
         <button className="btn block" disabled={busy} onClick={go}>{busy ? '복제하는 중' : '복제하기'}</button>
       </div>

@@ -66,6 +66,13 @@ export const errorText = (e: unknown) => {
   if (m.includes('USE_PUBLISH')) return '공개 설정은 여행 마무리 화면에서 바꿔주세요.';
   if (m.includes('ALREADY_FULL')) return '이미 자세히 기록 중인 여행이에요.';
   if (m.includes('DATES_REQUIRED')) return '다녀온 기간을 골라주세요.';
+  if (m.includes('NICKNAME_TAKEN')) return '이미 쓰고 있는 닉네임이에요.';
+  if (m.includes('NICKNAME_INVALID')) return '닉네임은 한글, 영문, 숫자, _ 로 2~16자예요.';
   if (m.includes('rate limit')) return '잠시 후 다시 시도해 주세요.';
   return '문제가 생겼어요. 잠시 후 다시 시도해 주세요.';
 };
+
+export const ticketNotice = (p: { tickets: number; is_admin: boolean } | null) =>
+  p?.is_admin ? '관리자 계정이라 티켓이 차감되지 않아요' : `티켓 1장을 사용해요 · 보유 ${p?.tickets ?? 0}장`;
+export const hasTicket = (p: { tickets: number; is_admin: boolean } | null) => !!p && (p.is_admin || p.tickets > 0);
+export const ticketCount = (p: { tickets: number; is_admin: boolean } | null) => (p?.is_admin ? '무제한' : String(p?.tickets ?? 0));
