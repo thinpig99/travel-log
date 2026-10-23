@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import { TRIP_SELECT, whenLabel } from '../lib/trips';
@@ -25,7 +25,9 @@ export default function TripPage() {
   const [sched, setSched] = useState<ScheduleItem[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [missing, setMissing] = useState(false);
-  const [tab, setTab] = useState<Tab>('overview');
+  const [params, setParams] = useSearchParams();
+  const tab = (['overview', 'prep', 'schedule', 'info'].includes(params.get('tab') ?? '') ? params.get('tab') : 'overview') as Tab;
+  const setTab = (t: Tab) => setParams(t === 'overview' ? {} : { tab: t }, { replace: true });
 
   const load = useCallback(async () => {
     const [t, p, s, g] = await Promise.all([

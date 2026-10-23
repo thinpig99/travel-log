@@ -9,6 +9,7 @@ import Wallet from './pages/Wallet';
 import Me from './pages/Me';
 import Board from './pages/Board';
 import Record from './pages/Record';
+import PrepDetail from './pages/PrepDetail';
 import Finish from './pages/Finish';
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
       <Route path="/trips/new" element={<NewTrip />} />
       <Route path="/trips/:id" element={<TripPage />} />
       <Route path="/trips/:id/finish" element={<Finish />} />
+      <Route path="/trips/:id/prep/:itemId" element={<PrepDetail />} />
       <Route path="/board" element={<Board />} />
       <Route path="/board/:id" element={<Record />} />
       <Route path="/wallet" element={<Wallet />} />

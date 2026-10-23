@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { costLabel } from '../../lib/format';
 import { NEXT_STATUS, STAGES, STATUS_LABEL, type PrepItem, type Trip } from '../../lib/types';
-import { CostInput, useCost, useTripCurrencies } from '../../components/CostInput';
 
 interface Props {
   trip: Trip;
@@ -12,8 +12,7 @@ interface Props {
 
 export default function Prep({ trip, items, setItems }: Props) {
   const tripId = trip.id;
-  const currencies = useTripCurrencies(trip);
-  const [open, setOpen] = useState<string | null>(null);
+  const nav = useNavigate();
   const [adding, setAdding] = useState<number | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [err, setErr] = useState('');
@@ -35,10 +34,6 @@ export default function Prep({ trip, items, setItems }: Props) {
     setAdding(null);
   };
 
-  const remove = async (id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id));
-    await supabase.from('prep_items').delete().eq('id', id);
-  };
 
   return (
     <div className="stack gap12">
@@ -50,10 +45,10 @@ export default function Prep({ trip, items, setItems }: Props) {
             <span className="stage-title">{stage}단계 · {STAGES[stage]}</span>
             {list.map((i) => (
               <div key={i.id} className="item">
-                <div className="item-main" onClick={() => setOpen(open === i.id ? null : i.id)}>
-                  <div className="stack grow">
+                <div className="item-main" role="link" onClick={() => nav(`/trips/${tripId}/prep/${i.id}`)}>
+                  <div className="stack grow" style={{ minWidth: 0 }}>
                     <span style={{ fontSize: 15 }}>{i.title}</span>
-                    {i.note && open !== i.id && <span className="xs muted">{i.note}</span>}
+                    {i.note && <span className="xs muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{i.note.split('\n')[0]}</span>}
                   </div>
                   <div className="row gap8">
                     {i.cost != null && <span className="small muted">{costLabel(i)}</span>}
@@ -64,11 +59,9 @@ export default function Prep({ trip, items, setItems }: Props) {
                     >
                       {STATUS_LABEL[i.status]}
                     </button>
+                    <span aria-hidden="true" className="muted">›</span>
                   </div>
                 </div>
-                {open === i.id && (
-                  <ItemEditor currencies={currencies} item={i} onSave={(p) => { patch(i.id, p); setOpen(null); }} onRemove={() => remove(i.id)} />
-                )}
               </div>
             ))}
             {adding === stage ? (
@@ -86,21 +79,3 @@ export default function Prep({ trip, items, setItems }: Props) {
   );
 }
 
-function ItemEditor({ currencies, item, onSave, onRemove }: { currencies: string[]; item: PrepItem; onSave: (p: Partial<PrepItem>) => void; onRemove: () => void }) {
-  const [title, setTitle] = useState(item.title);
-  const c = useCost(item, currencies);
-  const [err, setErr] = useState('');
-  const [note, setNote] = useState(item.note);
-  return (
-    <div className="item-edit">
-      <input className="input" value={title} placeholder="항목 이름 (예: 항공권 예매)" onChange={(e) => setTitle(e.target.value)} aria-label="항목 이름" />
-      <CostInput c={c} example={350000} />
-      <input className="input" value={note} placeholder="메모 (예: 국제면허증 발급 완료)" aria-label="메모" onChange={(e) => setNote(e.target.value)} />
-      {err && <p className="error" role="alert">{err}</p>}
-      <div className="row gap8">
-        <button className="btn danger small" onClick={onRemove}>지우기</button>
-        <button className="btn small grow" onClick={() => { const v = c.value(); if (!v) return setErr('환율을 불러오는 중이에요. 잠시 후 다시 눌러주세요.'); onSave({ title: title.trim() || item.title, note: note.trim(), ...v }); }}>저장</button>
-      </div>
-    </div>
-  );
-}

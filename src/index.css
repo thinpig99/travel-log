@@ -178,3 +178,13 @@ input.input::-webkit-date-and-time-value { text-align: left; margin: 0; }
 .route-arrow { color: var(--gold); margin: 0 6px; }
 .stay-row { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: start; padding: 12px 0; cursor: pointer; }
 .stay-num { width: 24px; height: 24px; border-radius: 12px; background: var(--brand-soft); color: var(--brand-ink); font-size: 12px; font-weight: 700; display: grid; place-items: center; margin-top: 1px; }
+.title-input { font-size: 24px; font-weight: 800; color: var(--ink); border: none; border-bottom: 1px solid var(--line-2); padding: 4px 0 8px; outline: none; background: transparent; width: 100%; }
+.title-input:focus { border-bottom-color: var(--brand); }
+.seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.seg-btn { height: 44px; border-radius: 12px; border: 1px solid var(--line-2); background: #fff; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+.seg-btn.on.todo { background: var(--red-bg); color: var(--red-ink); border-color: transparent; font-weight: 700; }
+.seg-btn.on.doing { background: var(--warn-bg); color: var(--warn-ink); border-color: transparent; font-weight: 700; }
+.seg-btn.on.done { background: var(--brand-soft); color: var(--brand-ink); border-color: transparent; font-weight: 700; }
+textarea.input.note-area { min-height: 220px; line-height: 1.6; }
+.passport { background: linear-gradient(135deg, #28347d, #1d2660); color: #fff; border-radius: 18px; padding: 18px; }
+.passport .muted-w { color: #c9cff0; }

@@ -4,6 +4,7 @@ import { useAuth } from '../lib/auth';
 import { errorText } from '../lib/format';
 import type { Group } from '../lib/types';
 import TabBar from '../components/TabBar';
+import PassportCard from '../components/PassportCard';
 import { Link } from 'react-router-dom';
 import { fetchBoard, type BoardTrip } from '../lib/board';
 
@@ -127,6 +128,8 @@ export default function Me() {
           </p>
         )}
         {nameErr && <p className="error" role="alert" style={{ marginTop: -8 }}>{nameErr}</p>}
+
+        <PassportCard />
 
         <div className="card stack gap8">
           <div className="row between">
