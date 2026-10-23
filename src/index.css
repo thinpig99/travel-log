@@ -1,18 +1,24 @@
 :root {
-  --ink: #15202b;
-  --ink-2: #3e4a54;
-  --muted: #5b6670;
-  --line: #eef1f3;
-  --line-2: #dde3e7;
-  --soft: #f4f7f8;
-  --land: #dce3e7;
-  --brand: #0b6e63;
-  --brand-dark: #084f47;
-  --brand-soft: #e1f2ee;
-  --brand-ink: #0b5d53;
-  --v1: #7cc6ba;
-  --v2: #2a9d8f;
-  --v3: #0b5d53;
+  --ink: #141a33;
+  --ink-2: #3b4263;
+  --muted: #5d6480;
+  --line: #eceef5;
+  --line-2: #dadeea;
+  --soft: #f4f5fa;
+  --land: #e2e6ef;
+  --brand: #28347d;
+  --brand-dark: #1d2660;
+  --brand-soft: #eceffa;
+  --brand-ink: #24307a;
+  --gold: #e7a83e;
+  --gold-soft: #fdf3df;
+  --gold-ink: #7a4b00;
+  --v1: #f6d38a;
+  --v2: #efb04a;
+  --v3: #e08a1e;
+  --c1: #5a69c2;
+  --c2: #909ce3;
+  --c3: #cdd3f8;
   --warn-bg: #fbf0d9;
   --warn-ink: #7a5300;
   --red-bg: #fce8e8;
@@ -41,8 +47,8 @@ h1, h2, h3, p { margin: 0; }
 .icon-btn { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: none; background: none; color: var(--ink); border-radius: 12px; cursor: pointer; }
 .icon-btn:active { background: var(--soft); }
 
-.title { font-size: 24px; font-weight: 700; letter-spacing: -0.4px; }
-.h2 { font-size: 16px; font-weight: 700; }
+.title { font-size: 26px; font-weight: 800; letter-spacing: -0.6px; }
+.h2 { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; }
 .muted { color: var(--muted); }
 .small { font-size: 13px; }
 .xs { font-size: 12px; }
@@ -106,18 +112,19 @@ textarea.input { height: auto; min-height: 72px; padding: 12px 14px; resize: ver
 .bar.over { background: #f6d9c4; }
 .bar.over > div { background: #d9772f; }
 
-.map-card { background: var(--soft); border-radius: 20px; overflow: hidden; }
-.map { width: 100%; height: 260px; }
-.legend { display: flex; gap: 12px; font-size: 12px; color: var(--muted); padding: 10px 16px 12px; align-items: center; }
+.map-card { background: var(--brand); border-radius: 20px; overflow: hidden; }
+.map { width: 100%; height: 240px; }
+.legend { display: flex; gap: 12px; font-size: 12px; color: #c9cff0; padding: 10px 16px 12px; align-items: center; }
 .dot { width: 8px; height: 8px; border-radius: 4px; display: inline-block; margin-right: 4px; }
 
 .trip-hero { display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 16px; background: var(--brand); color: #fff; }
-.trip-hero .sub { color: #d4ece8; font-size: 13px; }
-.trip-hero .bar { background: #3a8c83; height: 6px; }
+.trip-hero .sub { color: #c9cff0; font-size: 13px; }
+.trip-hero .bar { background: #3e4a96; height: 6px; }
+.trip-hero .bar > div { background: var(--gold) !important; }
 .trip-hero .bar > div { background: #fff; }
-.dday { background: #fff; color: var(--brand); font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 10px; }
+.dday { background: var(--gold); color: var(--ink); font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 10px; }
 
-.fab { position: fixed; right: max(16px, calc(50% - 244px)); bottom: calc(88px + var(--safe-bottom)); width: 60px; height: 60px; border-radius: 30px; border: none; background: var(--ink); color: #fff; display: flex; align-items: center; justify-content: center; z-index: 30; cursor: pointer; }
+.fab { position: fixed; right: max(16px, calc(50% - 244px)); bottom: calc(88px + var(--safe-bottom)); width: 60px; height: 60px; border-radius: 30px; border: none; background: var(--gold); color: var(--ink); display: flex; align-items: center; justify-content: center; z-index: 30; cursor: pointer; box-shadow: 0 6px 18px rgba(20, 26, 51, 0.25); }
 .sheet-back { position: fixed; inset: 0; background: rgba(21, 32, 43, 0.4); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
 .sheet { background: #fff; width: 100%; max-width: 520px; border-radius: 20px 20px 0 0; padding: 20px 16px calc(24px + var(--safe-bottom)); display: flex; flex-direction: column; gap: 10px; max-height: 88dvh; overflow-y: auto; }
 .sheet-option { display: flex; gap: 12px; align-items: center; padding: 14px; border-radius: 14px; border: 1px solid var(--line-2); background: #fff; text-align: left; color: var(--ink); cursor: pointer; }
@@ -135,5 +142,19 @@ textarea.input { height: auto; min-height: 72px; padding: 12px 14px; resize: ver
 .cat { font-size: 11px; padding: 1px 6px; border-radius: 6px; background: var(--soft); color: var(--ink-2); }
 .bottom-bar { position: sticky; bottom: 0; background: #fff; border-top: 1px solid var(--line); padding: 12px 16px calc(16px + var(--safe-bottom)); display: flex; gap: 8px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-.map-reset { position: absolute; right: 10px; top: 10px; height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid var(--line-2); background: #fff; font-size: 12px; color: var(--ink); cursor: pointer; }
+.map-reset { position: absolute; right: 10px; top: 10px; height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.12); font-size: 12px; color: #fff; cursor: pointer; }
 .maplibregl-popup-content { border-radius: 10px; padding: 8px 12px; }
+
+.hero { background: var(--brand); color: #fff; border-radius: 24px; overflow: hidden; margin: 0 -4px; }
+.hero-top { display: flex; justify-content: space-between; align-items: flex-start; padding: 20px 18px 6px; }
+.hero-greet { font-size: 13px; color: #c9cff0; }
+.hero-title { font-size: 26px; font-weight: 800; letter-spacing: -0.6px; margin-top: 2px; }
+.hero-pill { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 17px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); color: #fff; font-size: 13px; font-weight: 500; }
+.hero-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid rgba(255,255,255,0.14); }
+.hero-stats > div { padding: 12px 18px 16px; display: flex; flex-direction: column; gap: 2px; }
+.hero-stats > div + div { border-left: 1px solid rgba(255,255,255,0.14); }
+.hero-stats span { font-size: 12px; color: #c9cff0; }
+.hero-stats b { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+.hero .legend { padding: 8px 18px 12px; }
+.lg-land { width: 16px; height: 12px; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; }
+.lg-dot { width: 6px; height: 6px; border-radius: 3px; box-shadow: 0 0 0 1.5px var(--brand); }

@@ -43,37 +43,33 @@ export default function Home() {
   return (
     <div className="screen">
       <main className="page with-tabs">
-        <div className="row between">
-          <div className="stack gap4">
-            <span className="small muted">{profile?.display_name ? `안녕하세요, ${profile.display_name}님` : '안녕하세요'}</span>
-            <h1 className="title">내 여행 지도</h1>
+        <section className="hero" aria-label="내 여행 지도">
+          <div className="hero-top">
+            <div className="stack">
+              <span className="hero-greet">{profile?.display_name ? `안녕하세요, ${profile.display_name}님` : '안녕하세요'}</span>
+              <h1 className="hero-title">내 여행 지도</h1>
+            </div>
+            <Link to="/wallet" className="hero-pill" aria-label={`보유 티켓 ${ticketCount(profile)}`}>
+              <span style={{ color: 'var(--gold)', display: 'flex' }}><IconTicket s={16} /></span>
+              티켓 {ticketCount(profile)}
+            </Link>
           </div>
-          <Link to="/wallet" className="pill" style={{ height: 36, gap: 6, color: 'var(--ink)', fontWeight: 500 }} aria-label={`보유 티켓 ${ticketCount(profile)}`}>
-            <span style={{ color: 'var(--brand)', display: 'flex' }}><IconTicket s={16} /></span>
-            티켓 {ticketCount(profile)}
-          </Link>
-        </div>
-
-        <div className="map-card">
           <WorldMap visits={visits} countries={countryVisits} onCity={setCityFilter} />
           <div className="legend">
-            {[['1회', '#C9E8E1', 'var(--v1)'], ['2회', '#93CFC2', 'var(--v2)'], ['3회 이상', '#5DB3A0', 'var(--v3)']].map(([l, land, dot]) => (
+            {[['1회', 'var(--c1)', 'var(--v1)'], ['2회', 'var(--c2)', 'var(--v2)'], ['3회 이상', 'var(--c3)', 'var(--v3)']].map(([l, land, dot]) => (
               <span key={l} className="row gap4">
-                <i aria-hidden="true" style={{ width: 16, height: 12, borderRadius: 3, background: land, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <i style={{ width: 6, height: 6, borderRadius: 3, background: dot, boxShadow: '0 0 0 1.5px #fff' }} />
-                </i>
+                <i aria-hidden="true" className="lg-land" style={{ background: land }}><i className="lg-dot" style={{ background: dot }} /></i>
                 {l}
               </span>
             ))}
             <span className="xs" style={{ marginLeft: 'auto' }}>나라는 면, 도시는 점</span>
           </div>
-        </div>
-
-        <div className="stats">
-          <div className="stat"><span className="xs muted">도시</span><b>{visits.length}</b></div>
-          <div className="stat"><span className="xs muted">나라</span><b>{countryCount}</b></div>
-          <div className="stat"><span className="xs muted">여행</span><b>{trips.length}</b></div>
-        </div>
+          <div className="hero-stats">
+            <div><span>도시</span><b>{visits.length}</b></div>
+            <div><span>나라</span><b>{countryCount}</b></div>
+            <div><span>여행</span><b>{trips.length}</b></div>
+          </div>
+        </section>
 
         {upcoming.length > 0 && (
           <section className="stack gap8">
