@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
-import { TRIP_SELECT, tripCities, whenLabel } from '../lib/trips';
+import { TRIP_SELECT, whenLabel } from '../lib/trips';
 import { companionLabel, type Group, type PrepItem, type ScheduleItem, type Trip } from '../lib/types';
 import { nightsDays, rangeLabel } from '../lib/format';
 import { IconBack } from '../components/Icons';
+import Flags from '../components/Flags';
 import Overview from './trip/Overview';
 import Prep from './trip/Prep';
 import Schedule from './trip/Schedule';
@@ -24,7 +25,7 @@ export default function TripPage() {
   const [sched, setSched] = useState<ScheduleItem[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [missing, setMissing] = useState(false);
-  const [tab, setTab] = useState<Tab>('prep');
+  const [tab, setTab] = useState<Tab>('overview');
 
   const load = useCallback(async () => {
     const [t, p, s, g] = await Promise.all([
@@ -48,7 +49,6 @@ export default function TripPage() {
   if (!trip) return <div className="center-fill muted">불러오는 중</div>;
 
   const isOwner = trip.owner_id === session?.user.id;
-  const cities = tripCities(trip);
   const groupName = groups.find((g) => g.id === trip.group_id)?.name;
 
   return (
@@ -59,7 +59,7 @@ export default function TripPage() {
       </div>
       <main className="page" style={{ paddingTop: 4 }}>
         <div className="stack gap4">
-          <span className="small muted">{cities.join(', ')}</span>
+          <Flags codes={[...new Set([...(trip.trip_cities ?? [])].sort((a, b) => a.sort - b.sort).map((x) => x.cities.country_code))]} />
           <h1 className="title">{trip.title}</h1>
           <span className="small muted">
             {trip.start_date && trip.end_date

@@ -3,7 +3,7 @@ import { todayStr } from './format';
 import { cityLabel, ensureCity, type City } from './geo';
 import type { Trip } from './types';
 
-export const TRIP_SELECT = '*, trip_cities(sort, cities(id, name_en, name_ko, country_code)), prep_items(status, cost)';
+export const TRIP_SELECT = '*, trip_cities(sort, arrive, depart, note, cities(id, name_en, name_ko, country_code, lat, lng)), prep_items(status, cost)';
 
 export const fetchTrips = async () => {
   const { data, error } = await supabase.from('trips').select(TRIP_SELECT);

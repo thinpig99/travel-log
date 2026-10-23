@@ -13,7 +13,7 @@ export interface Visit {
 }
 
 let worldP: Promise<FeatureCollection> | null = null;
-const loadWorld = () => (worldP ??= fetch('/data/world.json').then((r) => r.json()));
+export const loadWorld = () => (worldP ??= fetch('/data/world.json').then((r) => r.json()));
 
 const toGeo = (v: Visit[]): FeatureCollection => ({
   type: 'FeatureCollection',

@@ -44,6 +44,8 @@ export interface CityRef {
   name_en: string;
   name_ko: string | null;
   country_code: string;
+  lat?: number;
+  lng?: number;
 }
 
 export interface Trip {
@@ -63,7 +65,7 @@ export interface Trip {
   visibility: 'private' | 'group' | 'public';
   group_id: string | null;
   created_at: string;
-  trip_cities?: { sort: number; cities: CityRef }[];
+  trip_cities?: { sort: number; arrive?: string | null; depart?: string | null; note?: string; cities: CityRef }[];
   prep_items?: { status: PrepStatus; cost: number | null }[];
 }
 

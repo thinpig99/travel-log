@@ -9,7 +9,9 @@ import PastTripForm, { type PastTripValues } from '../../components/PastTripForm
 import { fetchTripCityObjects, syncTripCities } from '../../lib/trips';
 import type { City } from '../../lib/geo';
 import { useAuth } from '../../lib/auth';
-import { hasTicket, ticketNotice, todayStr } from '../../lib/format';
+import { hasTicket, ticketNotice, todayStr, dayLabel, nightsDays } from '../../lib/format';
+import TripMap from '../../components/TripMap';
+import { computeRoute, computeStays, type Stay } from '../../lib/stays';
 
 interface Props {
   trip: Trip;
@@ -97,8 +99,23 @@ export default function Overview({ trip, prep, sched, groups, isOwner, onChange 
     nav('/', { replace: true });
   };
 
+  const stays = computeStays(trip, sched);
+  const route = computeRoute(stays, sched);
+  const countries = [...new Set(stays.map((s) => s.city.country_code))];
+
   return (
     <div className="stack gap16">
+      {stays.length > 0 && (
+        <div className="map-card trip-map-card">
+          <TripMap cities={stays.map((s) => s.city)} route={route} countries={countries} />
+          {route.length > 1 && (
+            <div className="route-line xs">
+              {route.map((c, i) => <span key={i}>{i > 0 && <span className="route-arrow" aria-hidden="true">→</span>}{c.name_ko || c.name_en}</span>)}
+            </div>
+          )}
+        </div>
+      )}
+      {full && stays.length > 0 && <CityStays trip={trip} stays={stays} onChange={onChange} />}
       {full && (
         <div className="soft-card stack gap8">
           <div className="row between">
@@ -240,6 +257,74 @@ function UpgradePanel({ trip, onDone }: { trip: Trip; onDone: () => void }) {
       <div className="row gap8">
         <button className="btn secondary small" onClick={() => setOpen(false)}>취소</button>
         <button className="btn small grow" disabled={busy} onClick={go}>{busy ? '바꾸는 중' : '자세히 기록 시작'}</button>
+      </div>
+    </div>
+  );
+}
+
+function CityStays({ trip, stays, onChange }: { trip: Trip; stays: Stay[]; onChange: () => void }) {
+  const [open, setOpen] = useState<number | null>(null);
+  return (
+    <section className="stack">
+      <div className="row between">
+        <b style={{ fontSize: 16 }}>도시별 일정</b>
+        <span className="xs muted">눌러서 날짜와 할 일을 적어요</span>
+      </div>
+      {stays.map((s, i) => (
+        <div key={s.city.id} className="item">
+          <div className="stay-row" onClick={() => setOpen(open === s.city.id ? null : s.city.id)}>
+            <span className="stay-num">{i + 1}</span>
+            <span className="stack gap4" style={{ minWidth: 0 }}>
+              <span className="row gap6" style={{ alignItems: 'baseline' }}>
+                <b style={{ fontSize: 15 }}>{s.name}</b>
+                <span className="xs muted">
+                  {s.arrive ? `${dayLabel(s.arrive)}${s.depart && s.depart !== s.arrive ? ` ~ ${dayLabel(s.depart)}` : ''}` : '날짜 미정'}
+                </span>
+              </span>
+              {s.arrive && s.depart && (
+                <span className="xs muted">{nightsDays(s.arrive, s.depart)}{s.inferred ? ' · 일정 기준' : ''}</span>
+              )}
+              {s.note && <span className="small">{s.note}</span>}
+            </span>
+          </div>
+          {open === s.city.id && <StayEditor trip={trip} stay={s} onDone={() => { setOpen(null); onChange(); }} onCancel={() => setOpen(null)} />}
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function StayEditor({ trip, stay, onDone, onCancel }: { trip: Trip; stay: Stay; onDone: () => void; onCancel: () => void }) {
+  const [arrive, setArrive] = useState(stay.arrive ?? '');
+  const [depart, setDepart] = useState(stay.depart ?? '');
+  const [note, setNote] = useState(stay.note);
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    if (arrive && depart && depart < arrive) return setErr('떠나는 날이 도착한 날보다 빨라요.');
+    setBusy(true);
+    const { error } = await supabase.from('trip_cities')
+      .update({ arrive: arrive || null, depart: depart || arrive || null, note: note.trim() })
+      .eq('trip_id', trip.id).eq('city_id', stay.city.id);
+    setBusy(false);
+    if (error) return setErr(errorText(error));
+    onDone();
+  };
+  return (
+    <div className="item-edit">
+      <div className="two">
+        <label className="field"><span>도착한 날</span>
+          <input className="input" type="date" value={arrive} min={trip.start_date ?? undefined} max={trip.end_date ?? undefined} onChange={(e) => { setArrive(e.target.value); if (!depart || depart < e.target.value) setDepart(e.target.value); }} />
+        </label>
+        <label className="field"><span>떠나는 날</span>
+          <input className="input" type="date" value={depart} min={arrive || trip.start_date || undefined} max={trip.end_date ?? undefined} onChange={(e) => setDepart(e.target.value)} />
+        </label>
+      </div>
+      <input className="input" value={note} maxLength={80} placeholder="이 도시에서 할 일 (예: 오타루 운하, 오르골당)" onChange={(e) => setNote(e.target.value)} aria-label="할 일" />
+      {err && <p className="error" role="alert">{err}</p>}
+      <div className="row gap8">
+        <button className="btn secondary small" onClick={onCancel}>취소</button>
+        <button className="btn small grow" disabled={busy} onClick={save}>저장</button>
       </div>
     </div>
   );
