@@ -1,0 +1,148 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../lib/auth';
+import { fetchTrips, isUpcoming, sortKey, tripCities, whenLabel } from '../lib/trips';
+import { companionLabel, type Trip } from '../lib/types';
+import { dday, rangeLabel } from '../lib/format';
+import WorldMap, { type Visit } from '../components/WorldMap';
+import TabBar from '../components/TabBar';
+import { IconPin, IconPlus, IconTemplate, IconTicket } from '../components/Icons';
+
+export default function Home() {
+  const { profile } = useAuth();
+  const nav = useNavigate();
+  const [visits, setVisits] = useState<Visit[]>([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [sheet, setSheet] = useState(false);
+  const [cityFilter, setCityFilter] = useState<number | null>(null);
+
+  useEffect(() => {
+    Promise.all([supabase.rpc('my_city_visits'), fetchTrips()]).then(([v, t]) => {
+      setVisits((v.data as Visit[]) ?? []);
+      setTrips(t);
+      setLoaded(true);
+    });
+  }, []);
+
+  const upcoming = useMemo(() => trips.filter(isUpcoming).sort((a, b) => sortKey(a).localeCompare(sortKey(b))), [trips]);
+  const past = useMemo(
+    () =>
+      trips
+        .filter((t) => !isUpcoming(t))
+        .filter((t) => cityFilter == null || t.trip_cities?.some((c) => c.cities.id === cityFilter))
+        .sort((a, b) => sortKey(b).localeCompare(sortKey(a))),
+    [trips, cityFilter]
+  );
+  const countryCount = new Set(visits.map((v) => v.country_code)).size;
+  const filterName = visits.find((v) => v.city_id === cityFilter)?.name;
+
+  return (
+    <div className="screen">
+      <main className="page with-tabs">
+        <div className="row between">
+          <div className="stack gap4">
+            <span className="small muted">{profile?.display_name ? `안녕하세요, ${profile.display_name}님` : '안녕하세요'}</span>
+            <h1 className="title">내 여행 지도</h1>
+          </div>
+          <Link to="/wallet" className="pill" style={{ height: 36, gap: 6, color: 'var(--ink)', fontWeight: 500 }} aria-label={`보유 티켓 ${profile?.tickets ?? 0}장`}>
+            <span style={{ color: 'var(--brand)', display: 'flex' }}><IconTicket s={16} /></span>
+            티켓 {profile?.tickets ?? 0}
+          </Link>
+        </div>
+
+        <div className="map-card">
+          <WorldMap visits={visits} onCity={setCityFilter} />
+          <div className="legend">
+            <span><i className="dot" style={{ background: 'var(--v1)' }} />1회</span>
+            <span><i className="dot" style={{ background: 'var(--v2)' }} />2회</span>
+            <span><i className="dot" style={{ background: 'var(--v3)' }} />3회 이상</span>
+          </div>
+        </div>
+
+        <div className="stats">
+          <div className="stat"><span className="xs muted">도시</span><b>{visits.length}</b></div>
+          <div className="stat"><span className="xs muted">나라</span><b>{countryCount}</b></div>
+          <div className="stat"><span className="xs muted">여행</span><b>{trips.length}</b></div>
+        </div>
+
+        {upcoming.length > 0 && (
+          <section className="stack gap8">
+            <h2 className="h2">준비 중인 여행</h2>
+            {upcoming.map((t) => {
+              const items = t.prep_items ?? [];
+              const done = items.filter((i) => i.status === 'done').length;
+              return (
+                <Link key={t.id} to={`/trips/${t.id}`} className="trip-hero">
+                  <div className="row between">
+                    <b style={{ fontSize: 17 }}>{t.title}</b>
+                    <span className="dday">{dday(t.start_date!)}</span>
+                  </div>
+                  <span className="sub">
+                    {rangeLabel(t.start_date!, t.end_date!)} · {companionLabel(t.companion)}
+                    {t.group_id ? ' · 그룹 공유 중' : ''}
+                  </span>
+                  <div className="row gap8">
+                    <div className="bar grow"><div style={{ width: `${items.length ? (done / items.length) * 100 : 0}%` }} /></div>
+                    <span className="sub xs">준비 {done}/{items.length}</span>
+                  </div>
+                </Link>
+              );
+            })}
+          </section>
+        )}
+
+        <section className="stack">
+          <div className="row between">
+            <h2 className="h2">지난 여행</h2>
+            {cityFilter != null && (
+              <button className="link-btn" onClick={() => setCityFilter(null)}>{filterName} 필터 해제</button>
+            )}
+          </div>
+          {loaded && trips.length === 0 && (
+            <div className="notice" style={{ marginTop: 8 }}>
+              아래 버튼으로 다녀온 여행을 남기면 지도에 색이 칠해져요.
+            </div>
+          )}
+          {past.map((t) => (
+            <Link key={t.id} to={`/trips/${t.id}`} className="list-row">
+              <div className="stack gap4 grow">
+                <span style={{ fontSize: 15, fontWeight: 500 }}>{t.title}</span>
+                <span className="xs muted">
+                  {[whenLabel(t), companionLabel(t.companion), tripCities(t).join(', ')].filter(Boolean).join(' · ')}
+                </span>
+              </div>
+              <span className="xs muted">{t.kind === 'simple' ? '간단 기록' : t.group_id ? '그룹' : '나만 보기'}</span>
+            </Link>
+          ))}
+        </section>
+      </main>
+
+      <button className="fab" aria-label="여행 추가" onClick={() => setSheet(true)}><IconPlus s={26} /></button>
+
+      {sheet && (
+        <div className="sheet-back" onClick={() => setSheet(false)}>
+          <div className="sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="여행 추가">
+            <h2 className="h2" style={{ marginBottom: 4 }}>무엇을 추가할까요?</h2>
+            <button className="sheet-option" onClick={() => nav('/trips/new')}>
+              <span style={{ color: 'var(--brand)' }}><IconTemplate /></span>
+              <span className="stack gap4">
+                <b>새 여행 준비</b>
+                <span className="xs muted">템플릿으로 준비와 일정을 정리해요 · 무료 {Math.max(0, 2 - (profile?.free_trips_used ?? 0))}회 남음</span>
+              </span>
+            </button>
+            <button className="sheet-option" onClick={() => nav('/past/new')}>
+              <span style={{ color: 'var(--brand)' }}><IconPin /></span>
+              <span className="stack gap4">
+                <b>지난 여행 기록</b>
+                <span className="xs muted">어디를, 언제, 누구와. 무료</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
+      <TabBar />
+    </div>
+  );
+}
