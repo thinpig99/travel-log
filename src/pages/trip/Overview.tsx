@@ -209,7 +209,7 @@ function UpgradePanel({ trip, onDone }: { trip: Trip; onDone: () => void }) {
     setErr('');
     if (!start || !end) return setErr('다녀온 기간을 골라주세요.');
     if (end < start) return setErr('돌아온 날이 떠난 날보다 빨라요.');
-    if (!hasTicket(profile)) return setErr('티켓이 없어요. 지갑에서 티켓을 확인해 주세요.');
+    if (!hasTicket(profile)) return setErr('탑승권이 없어요. 지갑에서 탑승권을 확인해 주세요.');
     setBusy(true);
     const { error } = await supabase.rpc('upgrade_trip', { tid: trip.id, p_start: start, p_end: end, p_headcount: Math.max(1, Number(headcount) || 1) });
     setBusy(false);

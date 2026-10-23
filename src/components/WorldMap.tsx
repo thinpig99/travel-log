@@ -24,10 +24,10 @@ const toGeo = (v: Visit[]): FeatureCollection => ({
   })),
 });
 
-export const COUNTRY_SHADES = ['#5A69C2', '#909CE3', '#CDD3F8'];
-const LAND = '#36428C';
-const SEA = '#28347D';
-export const CITY_SHADES = ['#F6D38A', '#EFB04A', '#E08A1E'];
+export const COUNTRY_SHADES = ['#A9B3E6', '#6F7CCB', '#2F3C93'];
+const LAND = '#CDD3E0';
+const SEA = '#EEF2F8';
+export const CITY_SHADES = ['#F4C15A', '#E89B2B', '#C46A0C'];
 
 // 나라별 방문 횟수 → 색 (1회, 2회, 3회 이상)
 const countryColor = (counts: Record<string, number>): ML.DataDrivenPropertyValueSpecification<string> => {
@@ -71,7 +71,7 @@ export default function WorldMap({ visits, countries, onCity, suffix = '번 다�
         sources: {},
         layers: [{ id: 'sea', type: 'background', paint: { 'background-color': SEA } }],
       },
-      center: [15, 32],
+      center: [15, 28],
       zoom: z,
       minZoom: z - 0.2,
       maxZoom: 9,
@@ -87,7 +87,7 @@ export default function WorldMap({ visits, countries, onCity, suffix = '번 다�
       const world = await loadWorld();
       if (!map.current) return;
       m.addSource('world', { type: 'geojson', data: world });
-      m.addLayer({ id: 'land', type: 'fill', source: 'world', paint: { 'fill-color': countryColor(latestCounts.current), 'fill-outline-color': SEA } });
+      m.addLayer({ id: 'land', type: 'fill', source: 'world', paint: { 'fill-color': countryColor(latestCounts.current), 'fill-outline-color': '#FFFFFF' } });
       m.addSource('visits', { type: 'geojson', data: toGeo(latest.current) });
       m.addLayer({
         id: 'visits',
@@ -96,8 +96,8 @@ export default function WorldMap({ visits, countries, onCity, suffix = '번 다�
         paint: {
           'circle-radius': ['interpolate', ['linear'], ['zoom'], -1, 1.6, 1, 2.4, 3, 4, 5, 6, 8, 9],
           'circle-color': ['step', ['get', 'visits'], CITY_SHADES[0], 2, CITY_SHADES[1], 3, CITY_SHADES[2]],
-          'circle-stroke-color': SEA,
-          'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], -1, 0.4, 4, 1.2],
+          'circle-stroke-color': '#FFFFFF',
+          'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], -1, 0.6, 4, 1.5],
           'circle-opacity': 0.95,
         },
       });
@@ -135,7 +135,7 @@ export default function WorldMap({ visits, countries, onCity, suffix = '번 다�
 
   const reset = () => {
     const m = map.current;
-    if (m && box.current) m.easeTo({ center: [15, 32], zoom: worldZoom(box.current.clientWidth), duration: 400 });
+    if (m && box.current) m.easeTo({ center: [15, 28], zoom: worldZoom(box.current.clientWidth), duration: 400 });
   };
 
   return (

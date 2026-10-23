@@ -146,7 +146,7 @@ function TripCard({ t, rank }: { t: BoardTrip; rank: number }) {
           <span className="xs muted">{monthLabel(t.start_date)} · {nightsDays(t.start_date, t.end_date)} · {companionLabel(t.companion)} {t.headcount}명 · {t.author}</span>
         </div>
         <span className="row gap4 small" style={{ fontWeight: 500 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill={t.liked ? 'var(--brand)' : 'none'} stroke="var(--brand)" strokeWidth="2" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.5-9.5C1 7.5 4 4 7.5 4c2 0 3.5 1 4.5 2.5C13 5 14.5 4 16.5 4 20 4 23 7.5 21.5 11.5 19.5 16.4 12 21 12 21z" /></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill={t.liked ? 'var(--brand)' : 'none'} stroke="var(--brand)" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M8 12.5l2.6 2.5L16 9.5" stroke={t.liked ? '#fff' : 'var(--brand)'} strokeLinecap="round" strokeLinejoin="round" /></svg>
           {t.likes}
         </span>
       </div>

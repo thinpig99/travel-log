@@ -52,7 +52,7 @@ export default function Me() {
   };
   const shareCode = async () => {
     const code = profile?.display_name ?? '';
-    const text = `여행 지도에 가입할 때 추천인 닉네임에 "${code}"를 넣으면 티켓과 좋아요 쿠폰을 하나씩 더 받아요. ${window.location.origin}`;
+    const text = `여행 지도에 가입할 때 추천인 닉네임에 "${code}"를 넣으면 탑승권과 스탬프를 하나씩 더 받아요. ${window.location.origin}`;
     try {
       if (navigator.share) await navigator.share({ text });
       else {
@@ -137,12 +137,12 @@ export default function Me() {
             <b style={{ fontSize: 20 }}>{profile?.display_name}</b>
             <button className="btn small" onClick={shareCode}>{copied ? '복사했어요' : '공유하기'}</button>
           </div>
-          <span className="xs muted">친구가 가입할 때 이 닉네임을 넣으면 둘 다 티켓 1장과 좋아요 쿠폰 1개를 받아요.</span>
+          <span className="xs muted">친구가 가입할 때 이 닉네임을 넣으면 둘 다 탑승권 1장과 스탬프 1개를 받아요.</span>
         </div>
 
         <div className="two">
           <div className="soft-card stack gap4"><span className="xs muted">공개한 기록</span><b style={{ fontSize: 22 }}>{mine.length}</b></div>
-          <div className="soft-card stack gap4"><span className="xs muted">받은 좋아요</span><b style={{ fontSize: 22 }}>{profile?.likes_received ?? 0}</b></div>
+          <div className="soft-card stack gap4"><span className="xs muted">받은 스탬프</span><b style={{ fontSize: 22 }}>{profile?.likes_received ?? 0}</b></div>
         </div>
 
         {mine.length > 0 && (
@@ -150,7 +150,7 @@ export default function Me() {
             <h2 className="h2">내 공개 기록</h2>
             {mine.map((t) => (
               <Link key={t.id} to={`/board/${t.id}`} className="list-row">
-                <span className="stack gap4"><span style={{ fontSize: 15, fontWeight: 500 }}>{t.title}</span><span className="xs muted">좋아요 {t.likes} · 복제 {t.copies}</span></span>
+                <span className="stack gap4"><span style={{ fontSize: 15, fontWeight: 500 }}>{t.title}</span><span className="xs muted">스탬프 {t.likes} · 복제 {t.copies}</span></span>
                 <span aria-hidden="true" className="muted">›</span>
               </Link>
             ))}

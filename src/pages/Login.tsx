@@ -35,7 +35,7 @@ export default function Login() {
       return true;
     }
     const { data } = await supabase.rpc('referrer_exists', { n });
-    setRefMsg(data ? { ok: true, text: '확인됐어요. 가입하면 티켓과 쿠폰을 1개씩 더 드려요.' } : { ok: false, text: '이 닉네임을 쓰는 사람이 없어요.' });
+    setRefMsg(data ? { ok: true, text: '확인됐어요. 가입하면 탑승권과 스탬프를 1개씩 더 드려요.' } : { ok: false, text: '이 닉네임을 쓰는 사람이 없어요.' });
     return !!data;
   };
 
@@ -107,7 +107,7 @@ export default function Login() {
                   onBlur={() => checkRef()} />
                 {hint(refMsg)}
               </label>
-              <p className="xs muted">가입하면 티켓 1장과 좋아요 쿠폰 1개를 드려요. 추천인을 넣으면 나와 친구 모두 1개씩 더 받아요.</p>
+              <p className="xs muted">가입하면 탑승권 1장과 스탬프 1개를 드려요. 추천인을 넣으면 나와 친구 모두 1개씩 더 받아요.</p>
             </>
           )}
           {err && <p className="error" role="alert">{err}</p>}

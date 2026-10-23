@@ -20,7 +20,7 @@ export default function PastTrip() {
 
   const save = async (v: PastTripValues) => {
     setErr('');
-    if (detailed && !hasTicket(profile)) return setErr('티켓이 없어요. 간단히 기록하거나 지갑에서 티켓을 확인해 주세요.');
+    if (detailed && !hasTicket(profile)) return setErr('탑승권이 없어요. 간단히 기록하거나 지갑에서 탑승권을 확인해 주세요.');
     setBusy(true);
     let tripId = '';
     try {

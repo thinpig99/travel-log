@@ -71,7 +71,7 @@ export default function Record() {
         <div className="stats">
           <div className="soft-card stack gap4" style={{ padding: 12 }}><span className="xs muted">총 비용</span><b>{manwon(t.total_cost)}</b></div>
           <div className="soft-card stack gap4" style={{ padding: 12 }}><span className="xs muted">1인당</span><b>{manwon(t.total_cost / Math.max(1, t.headcount))}</b></div>
-          <div className="soft-card stack gap4" style={{ padding: 12 }}><span className="xs muted">좋아요</span><b>{t.likes}</b></div>
+          <div className="soft-card stack gap4" style={{ padding: 12 }}><span className="xs muted">스탬프</span><b>{t.likes}</b></div>
         </div>
         {t.memo && <p className="small">{t.memo}</p>}
 
@@ -142,19 +142,19 @@ export default function Record() {
       <div className="bottom-bar" style={{ flexDirection: 'column' }}>
         {err && <p className="error" role="alert">{err}</p>}
         <span className="xs muted" style={{ textAlign: 'center' }}>
-          {t.is_mine ? '내가 공개한 기록이에요' : t.liked ? '좋아요를 눌렀어요 · 이제 복제할 수 있어요' : `좋아요를 누른 기록만 복제할 수 있어요 · 쿠폰 1개 사용 (보유 ${coupons}개)`}
+          {t.is_mine ? '내가 공개한 기록이에요' : t.liked ? '스탬프를 찍었어요 · 이제 복제할 수 있어요' : `스탬프를 찍은 기록만 복제할 수 있어요 · 스탬프 1개 사용 (보유 ${coupons}개)`}
         </span>
         <div className="row gap8">
           {!t.is_mine && (
-            <button className="btn secondary" aria-pressed={t.liked} aria-label="좋아요" disabled={t.liked || busy} onClick={like}
+            <button className="btn secondary" aria-pressed={t.liked} aria-label="스탬프 찍기" disabled={t.liked || busy} onClick={like}
               style={{ width: 52, padding: 0, borderColor: 'var(--brand)', background: t.liked ? 'var(--brand-soft)' : '#fff' }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill={t.liked ? 'var(--brand)' : 'none'} stroke="var(--brand)" strokeWidth="2" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.5-9.5C1 7.5 4 4 7.5 4c2 0 3.5 1 4.5 2.5C13 5 14.5 4 16.5 4 20 4 23 7.5 21.5 11.5 19.5 16.4 12 21 12 21z" /></svg>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill={t.liked ? 'var(--brand)' : 'none'} stroke="var(--brand)" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="9" strokeDasharray={t.liked ? undefined : "3 2"} /><path d="M8 12.5l2.6 2.5L16 9.5" stroke={t.liked ? "#fff" : "var(--brand)"} strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
           )}
           {t.liked || t.is_mine ? (
             <button className="btn grow" onClick={() => setCopyOpen(true)}>내 여행으로 복제</button>
           ) : (
-            <button className="btn grow" disabled={busy} onClick={like} style={{ background: 'var(--line)', color: 'var(--ink-2)' }}>좋아요 누르고 복제하기</button>
+            <button className="btn grow" disabled={busy} onClick={like} style={{ background: 'var(--line)', color: 'var(--ink-2)' }}>스탬프 찍고 복제하기</button>
           )}
         </div>
       </div>
