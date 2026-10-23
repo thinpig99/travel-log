@@ -115,7 +115,7 @@ export default function Record() {
                   {list.map((p) => (
                     <div key={p.id} className="list-row">
                       <span className="stack gap4"><span style={{ fontSize: 15 }}>{p.title}</span>{p.note && <span className="xs muted">{p.note}</span>}</span>
-                      <span className="small muted">{p.cost != null ? won(p.cost) : ''}</span>
+                      <span className="small muted" style={{ textAlign: 'right' }}>{costLabel(p)}</span>
                     </div>
                   ))}
                 </section>

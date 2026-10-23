@@ -76,6 +76,8 @@ export interface PrepItem {
   cost: number | null;
   note: string;
   sort: number;
+  currency?: string;
+  amount?: number | null;
 }
 
 export interface ScheduleItem {

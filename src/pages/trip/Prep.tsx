@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { numOrNull, won } from '../../lib/format';
-import { NEXT_STATUS, STAGES, STATUS_LABEL, type PrepItem } from '../../lib/types';
+import { costLabel } from '../../lib/format';
+import { NEXT_STATUS, STAGES, STATUS_LABEL, type PrepItem, type Trip } from '../../lib/types';
+import { CostInput, useCost, useTripCurrencies } from '../../components/CostInput';
 
 interface Props {
-  tripId: string;
+  trip: Trip;
   items: PrepItem[];
   setItems: (f: (prev: PrepItem[]) => PrepItem[]) => void;
 }
 
-export default function Prep({ tripId, items, setItems }: Props) {
+export default function Prep({ trip, items, setItems }: Props) {
+  const tripId = trip.id;
+  const currencies = useTripCurrencies(trip);
   const [open, setOpen] = useState<string | null>(null);
   const [adding, setAdding] = useState<number | null>(null);
   const [newTitle, setNewTitle] = useState('');
@@ -53,7 +56,7 @@ export default function Prep({ tripId, items, setItems }: Props) {
                     {i.note && open !== i.id && <span className="xs muted">{i.note}</span>}
                   </div>
                   <div className="row gap8">
-                    {i.cost != null && <span className="small muted">{won(i.cost)}</span>}
+                    {i.cost != null && <span className="small muted">{costLabel(i)}</span>}
                     <button
                       className={`badge ${i.status}`}
                       aria-label={`상태 ${STATUS_LABEL[i.status]}, 눌러서 바꾸기`}
@@ -64,13 +67,13 @@ export default function Prep({ tripId, items, setItems }: Props) {
                   </div>
                 </div>
                 {open === i.id && (
-                  <ItemEditor item={i} onSave={(p) => { patch(i.id, p); setOpen(null); }} onRemove={() => remove(i.id)} />
+                  <ItemEditor currencies={currencies} item={i} onSave={(p) => { patch(i.id, p); setOpen(null); }} onRemove={() => remove(i.id)} />
                 )}
               </div>
             ))}
             {adding === stage ? (
               <div className="row gap8" style={{ paddingTop: 8 }}>
-                <input className="input grow" autoFocus value={newTitle} placeholder="항목 이름" onChange={(e) => setNewTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add(stage)} />
+                <input className="input grow" autoFocus value={newTitle} placeholder="항목 이름 (예: 항공권 예매)" onChange={(e) => setNewTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add(stage)} />
                 <button className="btn small" onClick={() => add(stage)}>추가</button>
               </div>
             ) : (
@@ -83,18 +86,20 @@ export default function Prep({ tripId, items, setItems }: Props) {
   );
 }
 
-function ItemEditor({ item, onSave, onRemove }: { item: PrepItem; onSave: (p: Partial<PrepItem>) => void; onRemove: () => void }) {
+function ItemEditor({ currencies, item, onSave, onRemove }: { currencies: string[]; item: PrepItem; onSave: (p: Partial<PrepItem>) => void; onRemove: () => void }) {
   const [title, setTitle] = useState(item.title);
-  const [cost, setCost] = useState(item.cost != null ? item.cost.toLocaleString('ko-KR') : '');
+  const c = useCost(item, currencies);
+  const [err, setErr] = useState('');
   const [note, setNote] = useState(item.note);
   return (
     <div className="item-edit">
-      <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} aria-label="항목 이름" />
-      <input className="input" inputMode="numeric" value={cost} placeholder="비용 (원)" aria-label="비용" onChange={(e) => { const n = numOrNull(e.target.value); setCost(n == null ? '' : n.toLocaleString('ko-KR')); }} />
+      <input className="input" value={title} placeholder="항목 이름 (예: 항공권 예매)" onChange={(e) => setTitle(e.target.value)} aria-label="항목 이름" />
+      <CostInput c={c} example={350000} />
       <input className="input" value={note} placeholder="메모 (예: 국제면허증 발급 완료)" aria-label="메모" onChange={(e) => setNote(e.target.value)} />
+      {err && <p className="error" role="alert">{err}</p>}
       <div className="row gap8">
         <button className="btn danger small" onClick={onRemove}>지우기</button>
-        <button className="btn small grow" onClick={() => onSave({ title: title.trim() || item.title, cost: numOrNull(cost), note: note.trim() })}>저장</button>
+        <button className="btn small grow" onClick={() => { const v = c.value(); if (!v) return setErr('환율을 불러오는 중이에요. 잠시 후 다시 눌러주세요.'); onSave({ title: title.trim() || item.title, note: note.trim(), ...v }); }}>저장</button>
       </div>
     </div>
   );

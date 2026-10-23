@@ -81,7 +81,7 @@ export default function TripPage() {
               ))}
             </div>
             {tab === 'overview' && <Overview trip={trip} prep={prep} sched={sched} groups={groups} isOwner={isOwner} onChange={load} />}
-            {tab === 'prep' && <Prep tripId={trip.id} items={prep} setItems={setPrep} />}
+            {tab === 'prep' && <Prep trip={trip} items={prep} setItems={setPrep} />}
             {tab === 'schedule' && <Schedule trip={trip} items={sched} setItems={setSched} />}
             {tab === 'info' && <Info trip={trip} />}
           </>
