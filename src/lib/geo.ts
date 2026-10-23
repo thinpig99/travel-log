@@ -45,7 +45,14 @@ export const searchCities = async (q: string, limit = 8) => {
     if (s >= 0) scored.push({ c, s: s + Math.log10(c.pop + 10) / 10 });
   }
   scored.sort((a, b) => b.s - a.s);
-  return scored.slice(0, limit).map((x) => x.c);
+  const local = scored.slice(0, limit).map((x) => x.c);
+  // 다른 사용자가 지도 검색으로 추가해 둔 곳도 함께 찾는다
+  const { data } = await supabase.rpc('search_saved_cities', { q: q.trim() });
+  const saved: City[] = ((data ?? []) as { id: number; name_en: string; name_ko: string | null; country_code: string; lat: number; lng: number; population: number }[])
+    .filter((r) => !local.some((c) => c.id === r.id))
+    .map((r) => ({ id: r.id, nameEn: r.name_en, nameKo: r.name_ko ?? '', country: r.country_code, lat: r.lat, lng: r.lng, pop: r.population }));
+  const starts = (c: City) => norm(c.nameEn).startsWith(query) || (!!c.nameKo && c.nameKo.startsWith(q.trim()));
+  return [...saved.filter(starts), ...local, ...saved.filter((c) => !starts(c))].slice(0, limit);
 };
 
 export const countryName = async (code: string) => (await loadCountries())[code]?.[0] ?? code;
