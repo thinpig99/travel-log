@@ -15,12 +15,14 @@ export interface PastTripValues {
   companion: Companion;
   total_cost: number | null;
   memo: string;
+  headcount?: number;
 }
 
 export const autoTitle = (cities: City[]) => cities.slice(0, 3).map((c) => c.nameKo || c.nameEn).join(', ');
 
-export default function PastTripForm({ initial, onSubmit, children }: {
+export default function PastTripForm({ initial, onSubmit, children, detailed = false }: {
   initial: PastTripValues;
+  detailed?: boolean;
   onSubmit: (v: PastTripValues) => void;
   children: (submit: () => void) => React.ReactNode;
 }) {
@@ -35,13 +37,14 @@ export default function PastTripForm({ initial, onSubmit, children }: {
   const [companion, setCompanion] = useState<Companion>(initial.companion);
   const [cost, setCost] = useState(initial.total_cost != null ? initial.total_cost.toLocaleString('ko-KR') : '');
   const [memo, setMemo] = useState(initial.memo);
+  const [headcount, setHeadcount] = useState(String(initial.headcount ?? 2));
   const [err, setErr] = useState('');
 
   const submit = () => {
     setErr('');
     if (!cities.length) return setErr('다녀온 도시를 하나 이상 골라주세요.');
     let s: string | null = null, e: string | null = null, y: number | null = null, m: number | null = null;
-    if (exact) {
+    if (exact || detailed) {
       if (!start || !end) return setErr('다녀온 기간을 골라주세요.');
       if (end < start) return setErr('돌아온 날이 떠난 날보다 빨라요.');
       if (start > todayStr()) return setErr('앞으로 갈 여행은 "새 여행 준비"로 만들어 주세요.');
@@ -56,6 +59,7 @@ export default function PastTripForm({ initial, onSubmit, children }: {
       title: title.trim() || autoTitle(cities),
       cities, start_date: s, end_date: e, year: y, month: m, companion,
       total_cost: numOrNull(cost), memo: memo.trim(),
+      headcount: Math.max(1, Number(headcount) || 1),
     });
   };
 
@@ -72,11 +76,13 @@ export default function PastTripForm({ initial, onSubmit, children }: {
       <div className="field">
         <div className="row between">
           <span style={{ fontSize: 14, fontWeight: 700 }}>다녀온 기간</span>
-          <button type="button" className="link-btn" style={{ padding: 0 }} onClick={() => setExact(!exact)}>
-            {exact ? '날짜가 기억나지 않아요' : '날짜로 입력할게요'}
-          </button>
+          {!detailed && (
+            <button type="button" className="link-btn" style={{ padding: 0 }} onClick={() => setExact(!exact)}>
+              {exact ? '날짜가 기억나지 않아요' : '날짜로 입력할게요'}
+            </button>
+          )}
         </div>
-        {exact ? (
+        {exact || detailed ? (
           <div className="two">
             <label className="stack gap4">
               <span className="xs muted">떠난 날</span>
@@ -104,6 +110,12 @@ export default function PastTripForm({ initial, onSubmit, children }: {
         <span>누구와</span>
         <CompanionPicker value={companion} onChange={setCompanion} />
       </div>
+      {detailed && (
+        <label className="field">
+          <span>인원</span>
+          <input className="input" inputMode="numeric" value={headcount} onChange={(e) => setHeadcount(e.target.value.replace(/\D/g, '').slice(0, 2))} />
+        </label>
+      )}
       <label className="field">
         <span>쓴 돈 (선택)</span>
         <input className="input" inputMode="numeric" value={cost} placeholder="3,000,000" onChange={(e) => { const n = numOrNull(e.target.value); setCost(n == null ? '' : n.toLocaleString('ko-KR')); }} />

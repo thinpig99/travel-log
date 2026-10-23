@@ -8,6 +8,8 @@ import CityPicker from '../../components/CityPicker';
 import PastTripForm, { type PastTripValues } from '../../components/PastTripForm';
 import { fetchTripCityObjects, syncTripCities } from '../../lib/trips';
 import type { City } from '../../lib/geo';
+import { useAuth } from '../../lib/auth';
+import { todayStr } from '../../lib/format';
 
 interface Props {
   trip: Trip;
@@ -130,6 +132,7 @@ export default function Overview({ trip, prep, sched, groups, isOwner, onChange 
         <div className="stack">
           {trip.memo && <p className="small" style={{ padding: '4px 0 12px' }}>{trip.memo}</p>}
           <button className="btn secondary block" onClick={startEdit}>여행 정보 고치기</button>
+          {!full && isOwner && <UpgradePanel trip={trip} onDone={onChange} />}
         </div>
       ) : !full ? (
         <div className="stack gap16">
@@ -189,6 +192,57 @@ export default function Overview({ trip, prep, sched, groups, isOwner, onChange 
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function UpgradePanel({ trip, onDone }: { trip: Trip; onDone: () => void }) {
+  const { profile, refreshProfile } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [start, setStart] = useState(trip.start_date ?? '');
+  const [end, setEnd] = useState(trip.end_date ?? '');
+  const [headcount, setHeadcount] = useState(String(trip.headcount || (trip.companion === 'solo' ? 1 : 2)));
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const needsTicket = (profile?.free_trips_used ?? 0) >= 2;
+  const tickets = profile?.tickets ?? 0;
+
+  const go = async () => {
+    setErr('');
+    if (!start || !end) return setErr('다녀온 기간을 골라주세요.');
+    if (end < start) return setErr('돌아온 날이 떠난 날보다 빨라요.');
+    if (needsTicket && tickets < 1) return setErr('티켓이 없어요. 지갑에서 티켓을 확인해 주세요.');
+    setBusy(true);
+    const { error } = await supabase.rpc('upgrade_trip', { tid: trip.id, p_start: start, p_end: end, p_headcount: Math.max(1, Number(headcount) || 1) });
+    setBusy(false);
+    if (error) return setErr(errorText(error));
+    await refreshProfile();
+    onDone();
+  };
+
+  if (!open)
+    return (
+      <div className="card stack gap8" style={{ marginTop: 12 }}>
+        <b>자세히 기록하기</b>
+        <span className="small muted">준비, 일정, 정산까지 새 여행처럼 남길 수 있어요.{needsTicket ? ' 티켓 1장을 사용해요.' : ''}</span>
+        <button className="btn small" style={{ alignSelf: 'flex-start' }} onClick={() => setOpen(true)}>자세히 기록하기</button>
+      </div>
+    );
+
+  return (
+    <div className="card stack gap12" style={{ marginTop: 12 }}>
+      <b>자세히 기록하기</b>
+      <div className="two">
+        <label className="field"><span>떠난 날</span><input className="input" type="date" max={todayStr()} value={start} onChange={(e) => { setStart(e.target.value); if (!end || end < e.target.value) setEnd(e.target.value); }} /></label>
+        <label className="field"><span>돌아온 날</span><input className="input" type="date" min={start || undefined} value={end} onChange={(e) => setEnd(e.target.value)} /></label>
+      </div>
+      <label className="field"><span>인원</span><input className="input" inputMode="numeric" value={headcount} onChange={(e) => setHeadcount(e.target.value.replace(/\D/g, '').slice(0, 2))} /></label>
+      <span className="xs muted">준비 항목은 완료 상태로 만들어지고, 적어둔 쓴 돈은 정산 항목으로 옮겨져요.{needsTicket ? ` 티켓 1장을 사용해요 · 보유 ${tickets}장` : ''}</span>
+      {err && <p className="error" role="alert">{err}</p>}
+      <div className="row gap8">
+        <button className="btn secondary small" onClick={() => setOpen(false)}>취소</button>
+        <button className="btn small grow" disabled={busy} onClick={go}>{busy ? '바꾸는 중' : '자세히 기록 시작'}</button>
+      </div>
     </div>
   );
 }

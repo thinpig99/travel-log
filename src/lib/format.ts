@@ -64,6 +64,8 @@ export const errorText = (e: unknown) => {
   if (m.includes('OWN_TRIP')) return '내 기록에는 좋아요를 누를 수 없어요.';
   if (m.includes('NOT_FINISHED')) return '여행이 끝난 다음 날부터 공개할 수 있어요.';
   if (m.includes('USE_PUBLISH')) return '공개 설정은 여행 마무리 화면에서 바꿔주세요.';
+  if (m.includes('ALREADY_FULL')) return '이미 자세히 기록 중인 여행이에요.';
+  if (m.includes('DATES_REQUIRED')) return '다녀온 기간을 골라주세요.';
   if (m.includes('rate limit')) return '잠시 후 다시 시도해 주세요.';
   return '문제가 생겼어요. 잠시 후 다시 시도해 주세요.';
 };
