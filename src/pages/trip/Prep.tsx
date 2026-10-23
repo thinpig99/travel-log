@@ -35,33 +35,43 @@ export default function Prep({ trip, items, setItems }: Props) {
   };
 
 
+  const doneAll = items.filter((i) => i.status === 'done').length;
+  const pct = items.length ? Math.round((doneAll / items.length) * 100) : 0;
+
   return (
-    <div className="stack gap12">
+    <div className="prep-wrap">
+      <div className="prep-sum">
+        <div className="row between small"><span>준비 진행률</span><b>{doneAll} / {items.length} 완료</b></div>
+        <div className="prep-bar"><i style={{ width: `${pct}%` }} /></div>
+      </div>
       {err && <p className="error" role="alert">{err}</p>}
       {[1, 2, 3, 4, 5, 6].map((stage) => {
         const list = items.filter((i) => i.stage === stage).sort((a, b) => a.sort - b.sort);
+        const done = list.filter((i) => i.status === 'done').length;
+        const complete = list.length > 0 && done === list.length;
         return (
-          <section key={stage} className="stack">
-            <span className="stage-title">{stage}단계 · {STAGES[stage]}</span>
+          <section key={stage} className="tl-stage">
+            <span className={`tl-num ${complete ? 'done' : ''}`}>{stage}</span>
+            <div className="tl-head">
+              <b>{STAGES[stage]}</b>
+              <span className="xs muted">{done}/{list.length}</span>
+            </div>
             {list.map((i) => (
-              <div key={i.id} className="item">
-                <div className="item-main" role="link" onClick={() => nav(`/trips/${tripId}/prep/${i.id}`)}>
-                  <div className="stack grow" style={{ minWidth: 0 }}>
-                    <span style={{ fontSize: 15 }}>{i.title}</span>
-                    {i.note && <span className="xs muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{i.note.split('\n')[0]}</span>}
-                  </div>
-                  <div className="row gap8">
-                    {i.cost != null && <span className="small muted">{costLabel(i)}</span>}
-                    <button
-                      className={`badge ${i.status}`}
-                      aria-label={`상태 ${STATUS_LABEL[i.status]}, 눌러서 바꾸기`}
-                      onClick={(e) => { e.stopPropagation(); patch(i.id, { status: NEXT_STATUS[i.status] }); }}
-                    >
-                      {STATUS_LABEL[i.status]}
-                    </button>
-                    <span aria-hidden="true" className="muted">›</span>
-                  </div>
+              <div key={i.id} className={`tl-item ${i.status}`} role="link" tabIndex={0}
+                onClick={() => nav(`/trips/${tripId}/prep/${i.id}`)}
+                onKeyDown={(e) => e.key === 'Enter' && nav(`/trips/${tripId}/prep/${i.id}`)}>
+                <div className="stack grow" style={{ minWidth: 0, gap: 2 }}>
+                  <span style={{ fontSize: 15 }}>{i.title}</span>
+                  {i.cost != null && <span className="xs muted">{costLabel(i)}</span>}
+                  {i.note && <span className="xs muted ellipsis">{i.note.split('\n')[0]}</span>}
                 </div>
+                <button
+                  className={`badge ${i.status}`}
+                  aria-label={`상태 ${STATUS_LABEL[i.status]}, 눌러서 바꾸기`}
+                  onClick={(e) => { e.stopPropagation(); patch(i.id, { status: NEXT_STATUS[i.status] }); }}
+                >
+                  {STATUS_LABEL[i.status]}
+                </button>
               </div>
             ))}
             {adding === stage ? (
@@ -70,7 +80,7 @@ export default function Prep({ trip, items, setItems }: Props) {
                 <button className="btn small" onClick={() => add(stage)}>추가</button>
               </div>
             ) : (
-              <button className="link-btn" style={{ alignSelf: 'flex-start' }} onClick={() => { setAdding(stage); setNewTitle(''); }}>+ 항목 추가</button>
+              <button className="link-btn tl-add" onClick={() => { setAdding(stage); setNewTitle(''); }}>+ 항목 추가</button>
             )}
           </section>
         );
@@ -78,4 +88,3 @@ export default function Prep({ trip, items, setItems }: Props) {
     </div>
   );
 }
-

@@ -13,10 +13,10 @@ export const companionLabel = (c: Companion) => COMPANIONS.find((x) => x.value =
 
 export const STAGES: Record<number, string> = {
   1: '출국 서류와 항공',
-  2: '교통과 숙소',
-  3: '맛집, 관광, 쇼핑',
+  2: '숙소와 교통',
+  3: '관광, 맛집, 쇼핑',
   4: '로밍, 환전, 보험',
-  5: '짐 싸기',
+  5: '입국 등록과 짐 싸기',
   6: '정산',
 };
 
