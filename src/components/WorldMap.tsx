@@ -21,14 +21,16 @@ const toGeo = (v: Visit[]) => ({
   })),
 });
 
-export default function WorldMap({ visits, onCity }: { visits: Visit[]; onCity?: (id: number) => void }) {
+export default function WorldMap({ visits, onCity, suffix = '번 다녀왔어요' }: { visits: Visit[]; onCity?: (id: number) => void; suffix?: string }) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const ready = useRef(false);
   const latest = useRef(visits);
   const onCityRef = useRef(onCity);
+  const suffixRef = useRef(suffix);
   latest.current = visits;
   onCityRef.current = onCity;
+  suffixRef.current = suffix;
 
   useEffect(() => {
     if (!box.current) return;
@@ -78,7 +80,7 @@ export default function WorldMap({ visits, onCity }: { visits: Visit[]; onCity?:
         const p = f.properties as { name: string; visits: number; id: number };
         new maplibregl.Popup({ closeButton: false, offset: 10 })
           .setLngLat(e.lngLat)
-          .setHTML(`<div style="font-family:inherit;font-size:13px"><b>${p.name.replace(/</g, '&lt;')}</b><br/>${p.visits}번 다녀왔어요</div>`)
+          .setHTML(`<div style="font-family:inherit;font-size:13px"><b>${p.name.replace(/</g, '&lt;')}</b><br/>${p.visits}${suffixRef.current}</div>`)
           .addTo(m);
         onCityRef.current?.(Number(p.id));
       });

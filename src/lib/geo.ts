@@ -10,7 +10,7 @@ export interface City {
   lng: number;
   pop: number;
 }
-type CountryMap = Record<string, [string, string, string]>;
+export type CountryMap = Record<string, [string, string, string, string, string]>;
 
 let citiesP: Promise<City[]> | null = null;
 let countriesP: Promise<CountryMap> | null = null;
@@ -55,7 +55,7 @@ export const cityLabel = (c: { nameKo?: string; nameEn?: string; name_ko?: strin
 
 export const ensureCity = async (c: City) => {
   const countries = await loadCountries();
-  const [ko, en, cont] = countries[c.country] ?? [c.country, c.country, '기타'];
+  const [ko, en, cont] = countries[c.country] ?? [c.country, c.country, '기타', '', ''];
   const { error } = await supabase.rpc('ensure_city', {
     p_id: c.id,
     p_name_en: c.nameEn,

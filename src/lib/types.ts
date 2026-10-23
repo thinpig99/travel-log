@@ -82,6 +82,7 @@ export interface Profile {
   tickets: number;
   like_coupons: number;
   free_trips_used: number;
+  likes_received: number;
 }
 
 export interface Group {

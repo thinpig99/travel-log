@@ -4,6 +4,8 @@ import { useAuth } from '../lib/auth';
 import { errorText } from '../lib/format';
 import type { Group } from '../lib/types';
 import TabBar from '../components/TabBar';
+import { Link } from 'react-router-dom';
+import { fetchBoard, type BoardTrip } from '../lib/board';
 
 interface Member { group_id: string; user_id: string; profiles: { display_name: string; email: string } | null }
 interface Invite { id: string; group_id: string; email: string }
@@ -20,9 +22,11 @@ export default function Me() {
   const [inviteFor, setInviteFor] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [msg, setMsg] = useState('');
+  const [mine, setMine] = useState<BoardTrip[]>([]);
   const [err, setErr] = useState('');
 
   const load = useCallback(async () => {
+    fetchBoard({ sort: 'recent' }).then((b) => setMine(b.filter((t) => t.is_mine))).catch(() => {});
     const [g, m, i] = await Promise.all([
       supabase.from('groups').select('*').order('created_at'),
       supabase.from('group_members').select('group_id, user_id, profiles(display_name, email)'),
@@ -99,6 +103,23 @@ export default function Me() {
           </div>
           {!editName && <button className="link-btn" onClick={() => { setName(profile?.display_name ?? ''); setEditName(true); }}>이름 바꾸기</button>}
         </div>
+
+        <div className="two">
+          <div className="soft-card stack gap4"><span className="xs muted">공개한 기록</span><b style={{ fontSize: 22 }}>{mine.length}</b></div>
+          <div className="soft-card stack gap4"><span className="xs muted">받은 좋아요</span><b style={{ fontSize: 22 }}>{profile?.likes_received ?? 0}</b></div>
+        </div>
+
+        {mine.length > 0 && (
+          <section className="stack">
+            <h2 className="h2">내 공개 기록</h2>
+            {mine.map((t) => (
+              <Link key={t.id} to={`/board/${t.id}`} className="list-row">
+                <span className="stack gap4"><span style={{ fontSize: 15, fontWeight: 500 }}>{t.title}</span><span className="xs muted">좋아요 {t.likes} · 복제 {t.copies}</span></span>
+                <span aria-hidden="true" className="muted">›</span>
+              </Link>
+            ))}
+          </section>
+        )}
 
         <section className="stack gap8">
           <h2 className="h2">내 그룹</h2>

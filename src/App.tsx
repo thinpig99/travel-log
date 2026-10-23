@@ -8,6 +8,8 @@ import TripPage from './pages/Trip';
 import Wallet from './pages/Wallet';
 import Me from './pages/Me';
 import Board from './pages/Board';
+import Record from './pages/Record';
+import Finish from './pages/Finish';
 
 export default function App() {
   const { session, loading } = useAuth();
@@ -19,7 +21,9 @@ export default function App() {
       <Route path="/past/new" element={<PastTrip />} />
       <Route path="/trips/new" element={<NewTrip />} />
       <Route path="/trips/:id" element={<TripPage />} />
+      <Route path="/trips/:id/finish" element={<Finish />} />
       <Route path="/board" element={<Board />} />
+      <Route path="/board/:id" element={<Record />} />
       <Route path="/wallet" element={<Wallet />} />
       <Route path="/me" element={<Me />} />
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -113,7 +113,7 @@ export default function Home() {
                   {[whenLabel(t), companionLabel(t.companion), tripCities(t).join(', ')].filter(Boolean).join(' · ')}
                 </span>
               </div>
-              <span className="xs muted">{t.kind === 'simple' ? '간단 기록' : t.group_id ? '그룹' : '나만 보기'}</span>
+              <span className="xs muted">{t.kind === 'simple' ? '간단 기록' : t.visibility === 'public' ? <b style={{ color: 'var(--brand)' }}>공개</b> : t.group_id ? '그룹' : '나만 보기'}</span>
             </Link>
           ))}
         </section>

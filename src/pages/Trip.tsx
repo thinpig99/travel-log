@@ -9,8 +9,11 @@ import { IconBack } from '../components/Icons';
 import Overview from './trip/Overview';
 import Prep from './trip/Prep';
 import Schedule from './trip/Schedule';
+import Info from './trip/Info';
+import { todayStr } from '../lib/format';
+import { Link } from 'react-router-dom';
 
-type Tab = 'overview' | 'prep' | 'schedule';
+type Tab = 'overview' | 'prep' | 'schedule' | 'info';
 
 export default function TripPage() {
   const { id } = useParams();
@@ -73,16 +76,29 @@ export default function TripPage() {
         ) : (
           <>
             <div className="tabs" role="tablist">
-              {([['overview', '개요'], ['prep', '준비'], ['schedule', '일정']] as [Tab, string][]).map(([k, l]) => (
+              {([['overview', '개요'], ['prep', '준비'], ['schedule', '일정'], ['info', '정보']] as [Tab, string][]).map(([k, l]) => (
                 <button key={k} role="tab" aria-selected={tab === k} className={`tab ${tab === k ? 'on' : ''}`} onClick={() => setTab(k)}>{l}</button>
               ))}
             </div>
             {tab === 'overview' && <Overview trip={trip} prep={prep} sched={sched} groups={groups} isOwner={isOwner} onChange={load} />}
             {tab === 'prep' && <Prep tripId={trip.id} items={prep} setItems={setPrep} />}
             {tab === 'schedule' && <Schedule trip={trip} items={sched} setItems={setSched} />}
+            {tab === 'info' && <Info trip={trip} />}
           </>
         )}
       </main>
+      {trip.kind === 'full' && isOwner && trip.end_date && trip.end_date < todayStr() && (
+        <div className="bottom-bar">
+          {trip.visibility === 'public' ? (
+            <>
+              <Link to={`/board/${trip.id}`} className="btn secondary grow">게시판에서 보기</Link>
+              <button className="btn secondary" onClick={async () => { await supabase.rpc('publish_trip', { tid: trip.id, make_public: false }); load(); }}>공개 취소</button>
+            </>
+          ) : (
+            <Link to={`/trips/${trip.id}/finish`} className="btn grow">여행 마무리, 공개</Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }

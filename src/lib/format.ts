@@ -58,6 +58,12 @@ export const errorText = (e: unknown) => {
   if (m.includes('User already registered')) return '이미 가입된 이메일이에요. 로그인해 주세요.';
   if (m.includes('Password should be')) return '비밀번호는 6자 이상이어야 해요.';
   if (m.includes('NO_TICKET')) return '티켓이 없어요. 지갑에서 티켓을 확인해 주세요.';
+  if (m.includes('NO_COUPON')) return '좋아요 쿠폰이 없어요. 새 여행을 만들거나 티켓을 받으면 쿠폰이 생겨요.';
+  if (m.includes('ALREADY_LIKED')) return '이미 좋아요를 눌렀어요.';
+  if (m.includes('LIKE_FIRST')) return '좋아요를 누른 기록만 복제할 수 있어요.';
+  if (m.includes('OWN_TRIP')) return '내 기록에는 좋아요를 누를 수 없어요.';
+  if (m.includes('NOT_FINISHED')) return '여행이 끝난 다음 날부터 공개할 수 있어요.';
+  if (m.includes('USE_PUBLISH')) return '공개 설정은 여행 마무리 화면에서 바꿔주세요.';
   if (m.includes('rate limit')) return '잠시 후 다시 시도해 주세요.';
   return '문제가 생겼어요. 잠시 후 다시 시도해 주세요.';
 };

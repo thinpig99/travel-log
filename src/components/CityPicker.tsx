@@ -5,7 +5,7 @@ import { IconSearch, IconX } from './Icons';
 export default function CityPicker({ value, onChange }: { value: City[]; onChange: (v: City[]) => void }) {
   const [q, setQ] = useState('');
   const [results, setResults] = useState<City[]>([]);
-  const [countries, setCountries] = useState<Record<string, [string, string, string]>>({});
+  const [countries, setCountries] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     loadCountries().then(setCountries);

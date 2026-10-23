@@ -42,10 +42,7 @@ export default function Overview({ trip, prep, sched, groups, isOwner, onChange 
     if (full) {
       patch.budget = numOrNull(budget);
       patch.headcount = Math.max(1, Number(headcount) || 1);
-      if (isOwner) {
-        patch.group_id = groupId || null;
-        patch.visibility = groupId ? 'group' : 'private';
-      }
+      if (isOwner) patch.group_id = groupId || null;
     }
     const { error } = await supabase.from('trips').update(patch).eq('id', trip.id);
     setBusy(false);
