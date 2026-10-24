@@ -76,6 +76,7 @@ export interface Trip {
   group_id: string | null;
   created_at: string;
   flight_mode?: string;
+  members?: string[];
   trip_cities?: { sort: number; arrive?: string | null; depart?: string | null; note?: string; cities: CityRef }[];
   prep_items?: { status: PrepStatus; cost: number | null }[];
 }
@@ -107,6 +108,7 @@ export interface ScheduleItem {
   amount?: number | null;
   flight_id?: string | null;
   entry_id?: string | null;
+  payer?: string;
 }
 
 export interface Profile {

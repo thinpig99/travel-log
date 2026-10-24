@@ -10,12 +10,17 @@ interface Row { stage: number; title: string; cost: number | null }
 export default function SettlePanel({ trip, itemId, status, onStatus }: { trip: Trip; itemId: string; status: PrepStatus; onStatus: (s: PrepStatus) => void }) {
   const [prep, setPrep] = useState<Row[] | null>(null);
   const [sched, setSched] = useState<number>(0);
+  const [paid, setPaid] = useState<Record<string, number>>({});
 
   useEffect(() => {
     supabase.from('prep_items').select('stage, title, cost').eq('trip_id', trip.id).then(({ data }) => setPrep((data as Row[]) ?? []));
-    supabase.from('schedule_items').select('cost, flight_id, entry_id').eq('trip_id', trip.id).then(({ data }) =>
-      setSched(((data ?? []) as { cost: number | null; flight_id: string | null; entry_id: string | null }[])
-        .filter((r) => !r.flight_id && !r.entry_id).reduce((s, r) => s + (r.cost ?? 0), 0)));
+    supabase.from('schedule_items').select('cost, flight_id, entry_id, payer').eq('trip_id', trip.id).then(({ data }) => {
+      const rows = ((data ?? []) as { cost: number | null; flight_id: string | null; entry_id: string | null; payer: string }[]).filter((r) => !r.flight_id && !r.entry_id);
+      setSched(rows.reduce((s, r) => s + (r.cost ?? 0), 0));
+      const p: Record<string, number> = {};
+      for (const r of rows) if (r.payer && r.cost) p[r.payer] = (p[r.payer] ?? 0) + r.cost;
+      setPaid(p);
+    });
   }, [trip.id, itemId]);
 
   if (!prep) return <p className="small muted">불러오는 중</p>;
@@ -45,6 +50,44 @@ export default function SettlePanel({ trip, itemId, status, onStatus }: { trip: 
           <b>{sched.toLocaleString('ko-KR')}원</b>
         </div>
       </div>
+      {(() => {
+        const people = [...new Set([...(trip.members ?? []), ...Object.keys(paid)])];
+        if (people.length < 2 || !Object.keys(paid).length) {
+          return <p className="xs muted">일정 탭에서 비용을 적을 때 "낸 사람"을 고르면, 여기서 누가 누구에게 얼마를 보내면 되는지 계산해 드려요.</p>;
+        }
+        const sum = people.reduce((s, m) => s + (paid[m] ?? 0), 0);
+        const share = sum / people.length;
+        const bal = people.map((m) => ({ m, v: Math.round((paid[m] ?? 0) - share) }));
+        const give = bal.filter((b) => b.v < 0).map((b) => ({ ...b, v: -b.v }));
+        const get = bal.filter((b) => b.v > 0).map((b) => ({ ...b }));
+        const moves: string[] = [];
+        for (const g of give) {
+          for (const r of get) {
+            if (g.v <= 0) break;
+            if (r.v <= 0) continue;
+            const x = Math.min(g.v, r.v);
+            if (x >= 1) moves.push(`${g.m} → ${r.m} ${x.toLocaleString('ko-KR')}원`);
+            g.v -= x; r.v -= x;
+          }
+        }
+        return (
+          <div className="stack gap8">
+            <b style={{ fontSize: 15 }}>여행 중 쓴 돈 나누기</b>
+            <div className="check-list">
+              {people.map((m) => (
+                <div key={m} className="check-row" style={{ justifyContent: 'space-between' }}>
+                  <span>{m}</span><span className="small">낸 돈 <b>{(paid[m] ?? 0).toLocaleString('ko-KR')}원</b></span>
+                </div>
+              ))}
+            </div>
+            <div className={moves.length ? 'caution-box' : 'ok-box'}>
+              <b>{moves.length ? `한 사람당 ${Math.round(share).toLocaleString('ko-KR')}원씩이에요` : '서로 보낼 돈이 없어요'}</b>
+              {moves.map((x) => <span key={x}>{x}</span>)}
+            </div>
+            <p className="xs muted">낸 사람을 고른 일정 비용만 {people.length}명이 똑같이 나눠요.</p>
+          </div>
+        );
+      })()}
       <p className="xs muted">준비 항목의 비용과 일정 탭에 적은 비용을 합쳤어요. 항공권·숙소처럼 일정에 자동으로 들어간 항목은 두 번 세지 않아요.</p>
       <button className={`done-toggle ${status === 'done' ? 'on' : ''}`} style={{ color: 'var(--brand-ink)' }}
         onClick={() => onStatus(status === 'done' ? (ended ? 'doing' : 'todo') : 'done')}>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../lib/auth';
 import { costLabel, dayLabel, daysBetween, todayStr, won } from '../../lib/format';
 import { CostInput, useCost, useTripCurrencies } from '../../components/CostInput';
 import { CATEGORIES, catStyle, type ScheduleItem, type Trip } from '../../lib/types';
@@ -23,7 +24,16 @@ export default function Schedule({ trip, items, setItems }: Props) {
 
   const cityNames = [...(trip.trip_cities ?? [])].sort((a, b) => a.sort - b.sort).map((x) => cityLabel(x.cities));
   const currencies = useTripCurrencies(trip);
-  const ctx = { cities: cityNames, currencies };
+  const { profile } = useAuth();
+  const [members, setMembers] = useState<string[]>(trip.members?.length ? trip.members : [profile?.display_name || '나']);
+  const addMember = async (name: string) => {
+    const n = name.trim();
+    if (!n || members.includes(n)) return;
+    const next = [...members, n];
+    setMembers(next);
+    await supabase.from('trips').update({ members: next }).eq('id', trip.id);
+  };
+  const ctx = { cities: cityNames, currencies, members, addMember };
 
   const list = items.filter((i) => i.day === day).sort(byTime);
   const daySum = list.reduce((s, i) => s + (i.cost ?? 0), 0);
@@ -69,7 +79,7 @@ export default function Schedule({ trip, items, setItems }: Props) {
               <span className="stack gap4" style={{ minWidth: 0 }}>
                 <span className="row gap6" style={{ fontSize: 15, alignItems: 'center' }}>{i.title}</span>
                 {i.flight_id && i.note && <span className="xs muted">{i.note}</span>}
-                <span className="row gap6"><span className="cat" style={catStyle(i.category)}>{i.category}</span>{i.area && <span className="xs muted">{i.area}</span>}</span>
+                <span className="row gap6"><span className="cat" style={catStyle(i.category)}>{i.category}</span>{i.area && <span className="xs muted">{i.area}</span>}{i.payer && i.cost != null && <span className="xs payer-tag">{i.payer} 냄</span>}</span>
               </span>
               <span className="small muted" style={{ textAlign: 'right' }}>{costLabel(i)}</span>
             </div>
@@ -87,7 +97,7 @@ export default function Schedule({ trip, items, setItems }: Props) {
   );
 }
 
-function SchedForm({ ctx, item, lastArea, onSave, onRemove, onCancel }: { ctx: { cities: string[]; currencies: string[] }; item?: ScheduleItem; lastArea?: string; onSave: (p: Partial<ScheduleItem>) => void; onRemove?: () => void; onCancel: () => void }) {
+function SchedForm({ ctx, item, lastArea, onSave, onRemove, onCancel }: { ctx: { cities: string[]; currencies: string[]; members: string[]; addMember: (n: string) => Promise<void> }; item?: ScheduleItem; lastArea?: string; onSave: (p: Partial<ScheduleItem>) => void; onRemove?: () => void; onCancel: () => void }) {
   const initArea = item?.area ?? lastArea ?? ctx.cities[0] ?? '';
   const [time, setTime] = useState(item?.time?.slice(0, 5) ?? '');
   const [title, setTitle] = useState(item?.title ?? '');
@@ -96,14 +106,17 @@ function SchedForm({ ctx, item, lastArea, onSave, onRemove, onCancel }: { ctx: {
   const [custom, setCustom] = useState(!!initArea && !ctx.cities.includes(initArea));
   const c = useCost(item, ctx.currencies);
   const [note, setNote] = useState(item?.note ?? '');
+  const [payer, setPayer] = useState(item?.payer ?? (ctx.members.length === 1 ? ctx.members[0] : ''));
+  const [newMember, setNewMember] = useState<string | null>(null);
   const [err, setErr] = useState('');
 
   const submit = () => {
     if (!title.trim()) return setErr('방문 장소나 일정 이름을 적어주세요.');
+    if (time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return setErr('시간은 24시간제로 적어주세요 (예: 14:30).');
     const v = c.value();
     if (!v) return setErr('환율을 불러오는 중이에요. 잠시 후 다시 눌러주세요.');
     onSave({
-      time: time || null, title: title.trim(), category, area: area.trim(), note: note.trim(),
+      time: time || null, title: title.trim(), category, area: area.trim(), note: note.trim(), payer: v.cost != null ? payer : '',
       ...v,
     });
   };
@@ -111,8 +124,9 @@ function SchedForm({ ctx, item, lastArea, onSave, onRemove, onCancel }: { ctx: {
   return (
     <div className="item-edit">
       <div className="two">
-        <label className="field"><span>시간</span>
-          <input className="input" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+        <label className="field"><span>시간 (24시간)</span>
+          <input className="input" inputMode="numeric" value={time} placeholder="14:30" maxLength={5}
+            onChange={(e) => { const d = e.target.value.replace(/\D/g, '').slice(0, 4); setTime(d.length > 2 ? `${d.slice(0, 2)}:${d.slice(2)}` : d); }} />
         </label>
         <label className="field"><span>구분</span>
           <select className="input" value={category} onChange={(e) => setCategory(e.target.value)}>
@@ -133,6 +147,23 @@ function SchedForm({ ctx, item, lastArea, onSave, onRemove, onCancel }: { ctx: {
         <input className="input" value={area} placeholder="지역 (예: 비에이, 신치토세 공항)" onChange={(e) => setArea(e.target.value)} aria-label="지역" />
       )}
       <CostInput c={c} />
+      <div className="stack gap6">
+        <span className="xs muted">낸 사람 (정산할 때 써요)</span>
+        <div className="row gap6 wrap" role="group" aria-label="낸 사람">
+          {ctx.members.map((m) => (
+            <button key={m} type="button" className={`pill ${payer === m ? 'on' : ''}`} onClick={() => setPayer(payer === m ? '' : m)}>{m}</button>
+          ))}
+          {newMember == null ? (
+            <button type="button" className="pill" onClick={() => setNewMember('')}>+ 사람 추가</button>
+          ) : (
+            <span className="row gap6">
+              <input className="input sm" style={{ width: 110 }} autoFocus value={newMember} maxLength={10} placeholder="이름" onChange={(e) => setNewMember(e.target.value)}
+                onKeyDown={async (e) => { if (e.key === 'Enter') { await ctx.addMember(newMember); setPayer(newMember.trim()); setNewMember(null); } }} />
+              <button type="button" className="btn small" onClick={async () => { await ctx.addMember(newMember); if (newMember.trim()) setPayer(newMember.trim()); setNewMember(null); }}>추가</button>
+            </span>
+          )}
+        </div>
+      </div>
       <input className="input" value={note} placeholder="메모 (예: 예약번호, 운영시간)" onChange={(e) => setNote(e.target.value)} aria-label="메모" />
       {err && <p className="error" role="alert">{err}</p>}
       <div className="row gap8">

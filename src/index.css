@@ -325,3 +325,4 @@ textarea.input.note-area { min-height: 220px; line-height: 1.6; }
 .suggest-box { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 14px; background: var(--brand-soft); }
 .suggest-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: #fff; }
 .spot-add { height: 30px; padding: 0 10px; border-radius: 8px; border: none; background: var(--brand); color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.payer-tag { color: var(--brand-ink); background: var(--brand-soft); border-radius: 6px; padding: 0 6px; }
