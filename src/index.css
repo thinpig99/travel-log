@@ -213,3 +213,9 @@ textarea.input.note-area { min-height: 220px; line-height: 1.6; }
 @keyframes swipe-in-l { from { transform: translateX(-40%); opacity: .3; } to { transform: none; opacity: 1; } }
 .warn-box { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 12px; background: rgba(226, 75, 74, 0.1); border: 1px solid rgba(226, 75, 74, 0.25); color: var(--red-ink); font-size: 13px; line-height: 1.5; }
 .warn-box b { font-size: 13px; }
+.pass-hint { font-weight: 600; }
+.pass-hint.bad, .pass-hint.none { color: var(--red-ink); }
+.pass-hint.ok, .pass-hint.domestic { color: #2e7d32; }
+.ok-box { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 12px; background: rgba(46, 125, 50, 0.1); border: 1px solid rgba(46, 125, 50, 0.25); color: #22602a; font-size: 13px; line-height: 1.5; }
+.ok-box b, .warn-box b { font-size: 14px; }
+.pass-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #fff; border: 1px solid var(--line); border-radius: 12px; }

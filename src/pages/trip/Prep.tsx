@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { costLabel } from '../../lib/format';
+import { checkPassport, fetchPassport, isPassportItem, type PassportState } from '../../lib/passport';
 import { NEXT_STATUS, STAGES, STATUS_LABEL, type PrepItem, type Trip } from '../../lib/types';
 
 interface Props {
@@ -16,6 +17,21 @@ export default function Prep({ trip, items, setItems }: Props) {
   const [adding, setAdding] = useState<number | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [err, setErr] = useState('');
+  const [pState, setPState] = useState<PassportState | null>(null);
+  const countries = (trip.trip_cities ?? []).map((x) => x.cities.country_code);
+
+  // 여권 항목은 내 여권 정보로 자동 판단
+  useEffect(() => {
+    let alive = true;
+    fetchPassport().then((p) => {
+      if (!alive) return;
+      const { state } = checkPassport(p, countries, trip.end_date);
+      setPState(state);
+      const want = state === 'ok' || state === 'domestic' ? 'done' : 'todo';
+      items.filter((i) => isPassportItem(i) && i.status !== want).forEach((i) => patch(i.id, { status: want }));
+    });
+    return () => { alive = false; };
+  }, [trip.id, countries.join(), trip.end_date, items.length]);
 
   const patch = async (id: string, p: Partial<PrepItem>) => {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...p } : i)));
@@ -63,8 +79,12 @@ export default function Prep({ trip, items, setItems }: Props) {
                 <div className="stack grow" style={{ minWidth: 0, gap: 2 }}>
                   <span style={{ fontSize: 15 }}>{i.title}</span>
                   {i.cost != null && <span className="xs muted">{costLabel(i)}</span>}
+                  {isPassportItem(i) && pState && <span className={`xs pass-hint ${pState}`}>{PASS_HINT[pState]}</span>}
                   {i.note && <span className="xs muted ellipsis">{i.note.split('\n')[0]}</span>}
                 </div>
+                {isPassportItem(i) ? (
+                  <span className={`badge ${i.status}`} title="여권 정보로 자동으로 바뀌어요">{STATUS_LABEL[i.status]}</span>
+                ) : (
                 <button
                   className={`badge ${i.status}`}
                   aria-label={`상태 ${STATUS_LABEL[i.status]}, 눌러서 바꾸기`}
@@ -72,6 +92,7 @@ export default function Prep({ trip, items, setItems }: Props) {
                 >
                   {STATUS_LABEL[i.status]}
                 </button>
+                )}
               </div>
             ))}
             {adding === stage ? (
@@ -88,3 +109,10 @@ export default function Prep({ trip, items, setItems }: Props) {
     </div>
   );
 }
+
+const PASS_HINT: Record<PassportState, string> = {
+  domestic: '국내 여행이라 필요 없어요',
+  none: '내 정보에서 여권을 등록해 주세요',
+  bad: '유효기간이 부족해요 · 재발급 필요',
+  ok: '유효기간 확인 완료',
+};

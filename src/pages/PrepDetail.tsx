@@ -6,6 +6,8 @@ import { errorText } from '../lib/format';
 import { STAGES, STATUS_LABEL, type PrepItem, type PrepStatus, type Trip } from '../lib/types';
 import { IconBack } from '../components/Icons';
 import { CostInput, useCost, useTripCurrencies } from '../components/CostInput';
+import PassportCheck from '../components/PassportCheck';
+import { isPassportItem } from '../lib/passport';
 
 export default function PrepDetail() {
   const { id, itemId } = useParams();
@@ -29,6 +31,23 @@ export default function PrepDetail() {
 
   if (missing) return <div className="center-fill stack gap12"><span className="muted">항목을 찾을 수 없어요.</span><button className="btn secondary small" onClick={() => nav(`/trips/${id}?tab=prep`)}>준비 목록으로</button></div>;
   if (!trip || !item) return <div className="center-fill muted">불러오는 중</div>;
+  if (isPassportItem(item)) {
+    return (
+      <div className="screen">
+        <div className="topbar">
+          <button className="icon-btn" aria-label="뒤로" onClick={back}><IconBack /></button>
+          <span className="xs muted" style={{ paddingRight: 12 }}>{trip.title}</span>
+        </div>
+        <main className="page" style={{ paddingTop: 4 }}>
+          <div className="stack gap8">
+            <span className="small muted">{item.stage}단계 · {STAGES[item.stage]}</span>
+            <h1 className="title">여권</h1>
+          </div>
+          <PassportCheck trip={trip} />
+        </main>
+      </div>
+    );
+  }
   return <Editor trip={trip} item={item} onBack={back} />;
 }
 
