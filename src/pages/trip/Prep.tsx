@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { costLabel } from '../../lib/format';
+import { costLabel, parseDate, todayStr } from '../../lib/format';
 import { checkPassport, fetchPassport, isPassportItem, loadRules, type PassportState } from '../../lib/passport';
-import { NEXT_STATUS, STAGES, STATUS_LABEL, type PrepItem, type Trip } from '../../lib/types';
+import { NEXT_STATUS, STAGES, STAGE_WHEN, STATUS_LABEL, type PrepItem, type Trip } from '../../lib/types';
 
 interface Props {
   trip: Trip;
@@ -51,6 +51,14 @@ export default function Prep({ trip, items, setItems }: Props) {
   };
 
 
+  const today = todayStr();
+  const dStart = trip.start_date ? Math.round((parseDate(trip.start_date).getTime() - parseDate(today).getTime()) / 864e5) : null;
+  const isNow = (stage: number) => {
+    if (dStart == null) return false;
+    if (stage === 6) return !!trip.end_date && today > trip.end_date;
+    const w = STAGE_WHEN[stage];
+    return dStart <= w.from && dStart >= w.to;
+  };
   const doneAll = items.filter((i) => i.status === 'done').length;
   const pct = items.length ? Math.round((doneAll / items.length) * 100) : 0;
 
@@ -69,7 +77,11 @@ export default function Prep({ trip, items, setItems }: Props) {
           <section key={stage} className="tl-stage">
             <span className={`tl-num ${complete ? 'done' : ''}`}>{stage}</span>
             <div className="tl-head">
-              <b>{STAGES[stage]}</b>
+              <span className="tl-title">
+                <b>{STAGES[stage]}</b>
+                <span className="tl-when">{STAGE_WHEN[stage].label}</span>
+                {isNow(stage) && <span className="tl-now">지금</span>}
+              </span>
               <span className="xs muted">{done}/{list.length}</span>
             </div>
             {list.map((i) => (

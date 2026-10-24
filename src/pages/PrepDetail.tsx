@@ -8,6 +8,8 @@ import { IconBack } from '../components/Icons';
 import { CostInput, useCost, useTripCurrencies } from '../components/CostInput';
 import PassportCheck from '../components/PassportCheck';
 import VisaInfo, { isVisaItem } from '../components/VisaInfo';
+import ArrivalInfo from '../components/ArrivalInfo';
+import { isArrivalItem } from '../lib/entry';
 import { isPassportItem } from '../lib/passport';
 
 export default function PrepDetail() {
@@ -98,6 +100,7 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
         </div>
 
         {isVisaItem(item) && <VisaInfo trip={trip} />}
+        {isArrivalItem(item) && <ArrivalInfo trip={trip} />}
 
         <div className="field">
           <span>진행 상태</span>
