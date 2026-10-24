@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { AIRLINES, CABINS, airlineCode, emptySeg, type Cabin, type Journey, type Segment } from '../../lib/flights';
 import { durLabel, minutesBetween } from '../../lib/airports';
+import DateTime24 from './DateTime24';
 
 type Airports = Record<string, [string, string]>;
 
@@ -85,15 +86,14 @@ export default function FlightSheet({ title, labels, initial, airports, price, o
                         {airports[s.arr_airport] && <em>{airports[s.arr_airport][0]}</em>}
                       </label>
                     </div>
-                    <label className="ff"><span>출발 (현지 시각)</span>
-                      <input type="datetime-local" value={s.dep_at.length >= 16 ? s.dep_at.slice(0, 16) : ''} onChange={(e) => set(ji, si, { dep_at: e.target.value })} />
-                    </label>
-                    <label className="ff"><span>도착 (현지 시각)</span>
-                      <input type="datetime-local" value={s.arr_at.length >= 16 ? s.arr_at.slice(0, 16) : ''} min={s.dep_at.length >= 16 ? s.dep_at.slice(0, 10) + 'T00:00' : undefined}
-                        onFocus={() => { if (!s.arr_at && s.dep_at.length >= 16) set(ji, si, { arr_at: s.dep_at.slice(0, 16) }); }}
-                        onChange={(e) => set(ji, si, { arr_at: e.target.value })} />
+                    <div className="ff"><span>출발 (현지 시각, 24시간)</span>
+                      <DateTime24 label="출발" value={s.dep_at.replace(/T$/, '')} onChange={(v) => set(ji, si, { dep_at: v })} />
+                    </div>
+                    <div className="ff"><span>도착 (현지 시각, 24시간)</span>
+                      <DateTime24 label="도착" value={s.arr_at.replace(/T$/, '')} onChange={(v) => set(ji, si, { arr_at: v })}
+                        onFocusEmpty={() => { if (s.dep_at.length >= 10) set(ji, si, { arr_at: s.dep_at.slice(0, 10) }); }} />
                       {fly != null && fly > 0 && <em>비행 {durLabel(fly)}</em>}
-                    </label>
+                    </div>
                     <label className="ff"><span>좌석 등급</span>
                       <select value={s.cabin} onChange={(e) => set(ji, si, { cabin: e.target.value as Cabin })}>
                         {(Object.keys(CABINS) as Cabin[]).map((k) => <option key={k} value={k}>{CABINS[k]}</option>)}

@@ -300,3 +300,9 @@ textarea.input.note-area { min-height: 220px; line-height: 1.6; }
 .ff select { -webkit-appearance: menulist; appearance: auto; }
 .ftl-time.xs { white-space: nowrap; }
 .note-view { text-align: left; white-space: pre-wrap; padding: 14px; border-radius: 14px; background: #f4f6fb; border: 1px solid var(--line); font-size: 14px; line-height: 1.6; color: var(--ink); cursor: pointer; min-height: 56px; }
+.dt24 { display: grid; grid-template-columns: minmax(0, 1fr) 76px; gap: 8px; align-items: center; }
+.dt24 input { border: none; outline: none; background: transparent; font-size: 16px; padding: 2px 0; width: 100%; min-width: 0; color: var(--ink); font-family: inherit; }
+.dt24 input + input { border-left: 1px solid var(--line-2); padding-left: 10px; font-variant-numeric: tabular-nums; }
+.dt24 input.bad { color: var(--red-ink); }
+.dt24 input[type='date'] { -webkit-appearance: none; appearance: none; text-align: left; }
+.dt24 input[type='date']::-webkit-date-and-time-value { text-align: left; }
