@@ -226,7 +226,7 @@ function NoteBlock({ itemId, note, onSaved, hint }: { itemId: string; note: stri
   };
   return (
     <section className="stack gap8">
-      <b style={{ fontSize: 15 }}>메모</b>
+      <span className="row between"><b style={{ fontSize: 15 }}>메모</b><span className="xs muted">게시판에 공개되지 않아요</span></span>
       <button className="note-view" onClick={() => { setText(note); setErr(''); setOpen(true); }}>
         {note ? note : <span className="muted">{hint}</span>}
       </button>

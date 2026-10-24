@@ -25,15 +25,15 @@ export default function Record() {
   const [copyOpen, setCopyOpen] = useState(false);
 
   const load = useCallback(async () => {
-    const [b, p, s] = await Promise.all([
+    const [b, d] = await Promise.all([
       fetchBoard({ trip: id }),
-      supabase.from('prep_items').select('*').eq('trip_id', id!).order('stage').order('sort'),
-      supabase.from('schedule_items').select('*').eq('trip_id', id!).order('day').order('time', { nullsFirst: true }),
+      supabase.rpc('public_trip_detail', { tid: id }),
     ]);
     if (!b[0]) return setMissing(true);
     setT(b[0]);
-    setPrep((p.data as PrepItem[]) ?? []);
-    setSched((s.data as ScheduleItem[]) ?? []);
+    const detail = (d.data ?? {}) as { prep?: PrepItem[]; schedule?: ScheduleItem[] };
+    setPrep(detail.prep ?? []);
+    setSched(detail.schedule ?? []);
     setDay((d) => d || b[0].start_date);
   }, [id]);
 

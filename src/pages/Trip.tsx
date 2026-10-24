@@ -103,7 +103,7 @@ export default function TripPage() {
               <button className="btn secondary" onClick={async () => { await supabase.rpc('publish_trip', { tid: trip.id, make_public: false }); load(); }}>공개 취소</button>
             </>
           ) : (
-            <Link to={`/trips/${trip.id}/finish`} className="btn grow">여행 마무리, 공개</Link>
+            <Link to={`/trips/${trip.id}/finish`} className="btn grow">게시판에 공개하기</Link>
           )}
         </div>
       )}

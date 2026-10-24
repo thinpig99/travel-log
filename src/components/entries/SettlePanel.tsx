@@ -106,7 +106,7 @@ export default function SettlePanel({ trip, onChange }: { trip: Trip; onChange: 
       <button className={`done-toggle ${settled ? 'on' : ''}`} style={{ color: 'var(--brand-ink)' }} onClick={toggleSettled}>
         {settled ? '정산을 마쳤어요' : '정산을 마쳤으면 눌러주세요'}
       </button>
-      {ended && <Link to={`/trips/${trip.id}/finish`} className="link-btn" style={{ alignSelf: 'flex-start' }}>여행 마무리하고 공개하기 ›</Link>}
+      {ended && <Link to={`/trips/${trip.id}/finish`} className="link-btn" style={{ alignSelf: 'flex-start' }}>게시판에 공개하기 ›</Link>}
     </section>
   );
 }
