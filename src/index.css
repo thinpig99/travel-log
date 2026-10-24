@@ -268,3 +268,34 @@ textarea.input.note-area { min-height: 220px; line-height: 1.6; }
 .ph-wrap .ph { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--muted); pointer-events: none; }
 .ph-wrap .input.is-empty, .ph-wrap .input.is-empty::-webkit-datetime-edit { color: transparent; }
 #confirmed-flights .flight-card { background: var(--brand-soft); border: 1px solid #c9d0f0; border-left: 4px solid var(--brand); }
+/* flights */
+.sheet-wrap { position: fixed; inset: 0; background: rgba(20, 26, 51, 0.45); z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { width: 100%; max-width: 520px; max-height: 92dvh; background: #fff; border-radius: 20px 20px 0 0; display: flex; flex-direction: column; animation: sheet-up .22s ease; }
+@keyframes sheet-up { from { transform: translateY(40px); opacity: .5; } to { transform: none; opacity: 1; } }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px 8px; font-size: 16px; }
+.sheet-body { overflow-y: auto; padding: 4px 18px 16px; display: flex; flex-direction: column; gap: 16px; }
+.sheet-foot { padding: 10px 18px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); display: flex; }
+.sheet-sec { font-size: 14px; color: var(--brand-ink); }
+.seg-form { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; background: #f4f6fb; }
+.ff { display: flex; flex-direction: column; gap: 2px; background: #fff; border: 1px solid var(--line-2); border-radius: 12px; padding: 8px 12px; min-width: 0; }
+.ff > span { font-size: 11px; color: var(--muted); }
+.ff input, .ff select { border: none; outline: none; background: transparent; font-size: 16px; padding: 2px 0; width: 100%; min-width: 0; color: var(--ink); font-family: inherit; -webkit-appearance: none; appearance: none; }
+.ff em { font-style: normal; font-size: 12px; color: var(--brand-ink); }
+.ff:focus-within { border-color: var(--brand); }
+.ff2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.add-dashed { border: 1.5px dashed var(--line-2); background: #fff; border-radius: 14px; padding: 14px; font-size: 14px; color: var(--brand-ink); font-weight: 600; cursor: pointer; text-align: left; }
+.cand-sum { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 12px 14px; border-radius: 14px; background: #fff; border: 1.5px dashed var(--line-2); cursor: pointer; font-size: 14px; color: var(--ink); }
+.fix-card { text-align: left; padding: 14px; border-radius: 14px; background: #fff; border: 1px solid #d5daf2; border-left: 4px solid var(--brand); cursor: pointer; color: var(--ink); }
+.ftl-row { display: grid; grid-template-columns: 74px 14px minmax(0, 1fr); column-gap: 8px; align-items: center; min-height: 24px; }
+.ftl-row.mid { min-height: 30px; }
+.ftl-time { font-size: 15px; }
+.ftl-plus { font-size: 10px; color: var(--red-ink); margin-left: 2px; font-weight: 600; }
+.ftl-dot { width: 9px; height: 9px; border-radius: 5px; background: var(--brand); justify-self: center; }
+.ftl-line { width: 2px; height: 100%; min-height: 30px; background: #dde2f0; justify-self: center; }
+.ftl-ap { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ftl-ap .muted { font-size: 13px; }
+.ftl-info { color: var(--brand-ink); font-weight: 600; }
+.ftl-lay { margin: 8px 0; padding: 8px 12px; border-radius: 10px; background: rgba(239, 159, 39, 0.12); color: #7a4a06; font-size: 13px; font-weight: 600; }
+
+.ff select { -webkit-appearance: menulist; appearance: auto; }
+.ftl-time.xs { white-space: nowrap; }

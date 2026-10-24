@@ -10,9 +10,8 @@ import PassportCheck from '../components/PassportCheck';
 import VisaInfo, { isVisaItem } from '../components/VisaInfo';
 import ArrivalInfo from '../components/ArrivalInfo';
 import { isArrivalItem } from '../lib/entry';
-import FlightEditor, { fitSegments } from '../components/FlightEditor';
-import { fetchFlights, flightsComplete, flightsTouched, isFlightItem, resolveAirline, saveFlights, type Flight, type FlightMode, type FlightOption } from '../lib/flights';
-import FlightOptions from '../components/FlightOptions';
+import FlightsPanel from '../components/flights/FlightsPanel';
+import { isFlightItem } from '../lib/flights';
 import { isPassportItem } from '../lib/passport';
 
 export default function PrepDetail() {
@@ -74,64 +73,15 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
   };
 
   const flightItem = isFlightItem(item);
-  const start = trip.start_date ?? '';
-  const end = trip.end_date ?? '';
-  const [mode, setMode] = useState<FlightMode>((trip.flight_mode as FlightMode) ?? 'round');
-  const [segs, setSegs] = useState<Flight[] | null>(flightItem ? null : []);
-  useEffect(() => {
-    if (!flightItem) return;
-    fetchFlights(trip.id).then((f) => setSegs(fitSegments((trip.flight_mode as FlightMode) ?? 'round', f, start, end)));
-  }, [trip.id]);
-
-  const [optCount, setOptCount] = useState<number | null>(null);
-  const autoStatus: PrepStatus | null = flightItem && segs && optCount != null
-    ? flightsComplete(segs) ? 'done' : optCount > 0 || flightsTouched(segs) ? 'doing' : 'todo'
-    : null;
+  const [autoStatus, setAutoStatus] = useState<PrepStatus | null>(null);
   const shownStatus = autoStatus ?? status;
-  const onOptCount = (n: number) => {
-    setOptCount((prev) => {
-      if (prev != null && segs && !flightsComplete(segs)) {
-        const s: PrepStatus = n > 0 || flightsTouched(segs) ? 'doing' : 'todo';
-        supabase.from('prep_items').update({ status: s }).eq('id', item.id).then(() => {});
-      }
-      return n;
-    });
-  };
-  const pickOption = (o: FlightOption) => {
-    if (!segs) return;
-    if (o.legs?.length && o.trip_type) {
-      // 후보의 여정 종류와 구간을 그대로 확정 항공편으로 옮긴다 (이미 적은 편명은 살린다)
-      if (flightsComplete(segs)) return setErr('확정 항공편이 모두 채워져 있어요. 바꿀 항공편의 내용을 먼저 지워주세요.');
-      const code = resolveAirline(o.airline) ?? '';
-      setMode(o.trip_type);
-      setSegs(o.legs.map((l, i) => {
-        const s = segs[i];
-        return { id: s?.id, flight_no: s?.flight_no || code, dep_airport: l.dep, arr_airport: l.arr, dep_date: l.date, dep_time: l.time, arr_date: s?.arr_date || l.date, arr_time: s?.arr_time ?? '' };
-      }));
-      setErr('');
-      document.getElementById('confirmed-flights')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
-    const date = o.dep_date ?? '';
-    const code = (o.airline.match(/^[A-Z0-9]{2}$/i) ? o.airline.toUpperCase() : '');
-    const fill = (s: Flight): Flight => ({ ...s, dep_airport: o.dep_airport, arr_airport: o.arr_airport, dep_date: date || s.dep_date, arr_date: date || s.arr_date, dep_time: (o.dep_time ?? '').slice(0, 5) || s.dep_time, flight_no: s.flight_no || code });
-    const idx = segs.findIndex((s) => !flightsComplete([s]));
-    if (idx >= 0) setSegs(segs.map((s, i) => (i === idx ? fill(s) : s)));
-    else if (mode === 'multi') setSegs([...segs, fill({ flight_no: '', dep_airport: '', dep_date: '', dep_time: '', arr_airport: '', arr_date: '', arr_time: '' })]);
-    else return setErr('확정 항공편이 모두 채워져 있어요. 바꿀 항공편의 내용을 먼저 지워주세요.');
-    setErr('');
-    document.getElementById('confirmed-flights')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const onFlightStatus = (st: PrepStatus) => {
+    setAutoStatus(st);
+    if (st !== status) { setStatus(st); supabase.from('prep_items').update({ status: st }).eq('id', item.id).then(() => {}); }
   };
 
   const save = async () => {
     if (!title.trim()) return setErr('항목 이름을 적어주세요.');
-    if (flightItem && segs) {
-      const bad = segs.find((s) => s.arr_date && s.dep_date && s.arr_date < s.dep_date);
-      if (bad) return setErr('도착 날짜가 출발 날짜보다 빨라요.');
-      const filled = segs.filter((s) => s.flight_no || s.dep_airport || s.arr_airport || s.dep_time);
-      const { error: fe } = await saveFlights(trip.id, mode, filled);
-      if (fe) return setErr(errorText(fe));
-    }
     const v = c.value();
     if (!v) return setErr('환율을 불러오는 중이에요. 잠시 후 다시 눌러주세요.');
     setBusy(true);
@@ -186,14 +136,7 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
             placeholder={'준비하면서 챙길 것들을 자유롭게 적어요\n예: 예약번호 AB1234, 체크인 15시, 취소는 3일 전까지'} />
         </label>
 
-        {flightItem && <FlightOptions tripId={trip.id} onCount={onOptCount} onPick={pickOption} />}
-        {flightItem && (
-          <div id="confirmed-flights" className="stack gap8">
-            <span className="row gap6" style={{ alignItems: 'center' }}><span className="chip-fix">확정</span><b style={{ fontSize: 15 }}>확정 항공편</b></span>
-            <p className="xs muted">예약을 마친 항공편이에요. 저장하면 일정 탭에 자동으로 들어가요.</p>
-            {segs ? <FlightEditor mode={mode} segs={segs} start={start} end={end} onMode={setMode} onChange={setSegs} /> : <p className="small muted">항공편을 불러오는 중</p>}
-          </div>
-        )}
+        {flightItem && <FlightsPanel trip={trip} onStatus={onFlightStatus} />}
 
         {err && <p className="error" role="alert">{err}</p>}
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { costLabel, parseDate, todayStr } from '../../lib/format';
-import { fetchFlights, flightsComplete, flightsTouched, isFlightItem } from '../../lib/flights';
+import { fetchJourneys, isFlightItem, journeysComplete } from '../../lib/flights';
 import { checkPassport, fetchPassport, isPassportItem, loadRules, type PassportState } from '../../lib/passport';
 import { NEXT_STATUS, STAGES, STAGE_WHEN, STATUS_LABEL, type PrepItem, type Trip } from '../../lib/types';
 
@@ -34,9 +34,9 @@ export default function Prep({ trip, items, setItems }: Props) {
     // 항공권 항목은 후보와 확정 항공편으로 자동 판단
     const fi = items.filter(isFlightItem);
     if (fi.length) {
-      Promise.all([fetchFlights(trip.id), supabase.from('flight_options').select('id', { count: 'exact', head: true }).eq('trip_id', trip.id)]).then(([segs, opts]) => {
+      Promise.all([fetchJourneys(trip.id), supabase.from('flight_options').select('id', { count: 'exact', head: true }).eq('trip_id', trip.id)]).then(([segs, opts]) => {
         if (!alive) return;
-        const want = flightsComplete(segs) ? 'done' : (opts.count ?? 0) > 0 || flightsTouched(segs) ? 'doing' : 'todo';
+        const want = journeysComplete(segs) ? 'done' : (opts.count ?? 0) > 0 || segs.some((j) => j.length) ? 'doing' : 'todo';
         fi.filter((i) => i.status !== want).forEach((i) => patch(i.id, { status: want }));
       });
     }

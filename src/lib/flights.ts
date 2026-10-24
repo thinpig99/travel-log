@@ -1,37 +1,70 @@
 import { supabase } from './supabase';
 
-export type FlightMode = 'round' | 'oneway' | 'multi';
-export interface Flight {
-  id?: string;
-  flight_no: string;
-  dep_airport: string;
-  dep_date: string;
-  dep_time: string;
-  arr_airport: string;
-  arr_date: string;
-  arr_time: string;
-}
+export type Cabin = 'economy' | 'premium' | 'business' | 'first';
+export const CABINS: Record<Cabin, string> = { economy: '이코노미', premium: '프리미엄 이코노미', business: '비즈니스', first: '퍼스트' };
 
-export const emptyFlight = (date = ''): Flight => ({ flight_no: '', dep_airport: '', dep_date: date, dep_time: '', arr_airport: '', arr_date: date, arr_time: '' });
+/** 비행 한 구간. 시각은 그 공항 현지 시각 "YYYY-MM-DDTHH:MM" */
+export interface Segment { flight_no: string; dep_airport: string; dep_at: string; arr_airport: string; arr_at: string; cabin: Cabin }
+/** 여정 = 갈아타는 구간들의 묶음 (가는 편, 오는 편 ...) */
+export type Journey = Segment[];
 
-export const fetchFlights = async (tripId: string): Promise<Flight[]> => {
-  const { data } = await supabase.from('flights').select('*').eq('trip_id', tripId).order('seq');
-  return ((data ?? []) as Record<string, string | null>[]).map((r) => ({
-    id: r.id ?? undefined,
-    flight_no: r.flight_no ?? '',
-    dep_airport: r.dep_airport ?? '',
-    dep_date: r.dep_date ?? '',
-    dep_time: (r.dep_time ?? '').slice(0, 5),
-    arr_airport: r.arr_airport ?? '',
-    arr_date: r.arr_date ?? '',
-    arr_time: (r.arr_time ?? '').slice(0, 5),
+export const emptySeg = (date = ''): Segment => ({ flight_no: '', dep_airport: '', dep_at: date ? `${date}T` : '', arr_airport: '', arr_at: '', cabin: 'economy' });
+export const journeyLabel = (i: number, total: number) => (total <= 2 ? (i === 0 ? '가는 편' : '오는 편') : `여정 ${i + 1}`);
+
+const dt = (d: string | null, t: string | null) => (d ? `${d}T${(t ?? '').slice(0, 5)}` : '');
+
+export const fetchJourneys = async (tripId: string): Promise<Journey[]> => {
+  const { data } = await supabase.from('flights').select('*').eq('trip_id', tripId).order('journey').order('seq');
+  const out: Journey[] = [];
+  for (const r of (data ?? []) as Record<string, string | null>[]) {
+    const j = Number(r.journey ?? 0);
+    (out[j] ??= []).push({
+      flight_no: r.flight_no ?? '', dep_airport: r.dep_airport ?? '', dep_at: dt(r.dep_date, r.dep_time),
+      arr_airport: r.arr_airport ?? '', arr_at: dt(r.arr_date, r.arr_time), cabin: (r.cabin as Cabin) ?? 'economy',
+    });
+  }
+  return out.filter(Boolean);
+};
+
+const clean = (j: Journey[]) => j.map((x) => x.map((s) => ({ ...s, dep_at: s.dep_at.length === 16 ? s.dep_at : s.dep_at.slice(0, 10), arr_at: s.arr_at.length === 16 ? s.arr_at : s.arr_at.slice(0, 10) }))).filter((x) => x.length);
+export const saveJourneys = (tripId: string, journeys: Journey[]) => supabase.rpc('save_journeys', { tid: tripId, p_journeys: clean(journeys) });
+
+export const segComplete = (s: Segment) => !!(s.flight_no && s.dep_airport && s.arr_airport && s.dep_at.length >= 10);
+export const journeysComplete = (js: Journey[]) => js.length > 0 && js.every((j) => j.length > 0 && j.every(segComplete));
+
+export const isFlightItem = (i: { stage: number; title: string }) => i.stage === 1 && i.title.trim() === '항공권';
+
+/** 항공권 후보 = 왕복 한 세트 (가는 편, 오는 편) + 가격 */
+export interface Candidate { id?: string; journeys: Journey[]; price: number | null; note: string }
+
+const legacy = (r: Record<string, unknown>): Journey[] => {
+  const legs = (r.legs as { dep: string; arr: string; date: string; time: string }[] | null) ?? null;
+  const cabin = (r.cabin as Cabin) ?? 'economy';
+  const airline = (r.airline as string) ?? '';
+  if (legs?.length) return legs.map((l) => [{ flight_no: airline, dep_airport: l.dep, arr_airport: l.arr, dep_at: l.date ? `${l.date}T${l.time ?? ''}` : '', arr_at: '', cabin }]);
+  return [[{ flight_no: airline, dep_airport: (r.dep_airport as string) ?? '', arr_airport: (r.arr_airport as string) ?? '', dep_at: dt(r.dep_date as string | null, r.dep_time as string | null), arr_at: '', cabin }]];
+};
+
+export const fetchCandidates = async (tripId: string): Promise<Candidate[]> => {
+  const { data } = await supabase.from('flight_options').select('*').eq('trip_id', tripId).order('created_at');
+  return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
+    id: r.id as string,
+    journeys: (r.journeys as Journey[] | null) ?? legacy(r),
+    price: r.price != null ? Number(r.price) : null,
+    note: (r.note as string) ?? '',
   }));
 };
 
-export const saveFlights = (tripId: string, mode: FlightMode, segs: Flight[]) =>
-  supabase.rpc('save_flights', { tid: tripId, p_mode: mode, p_segments: segs });
-
-export const isFlightItem = (i: { stage: number; title: string }) => i.stage === 1 && i.title.trim() === '항공권';
+export const saveCandidate = async (tripId: string, c: Candidate) => {
+  const first = c.journeys[0]?.[0];
+  const row = {
+    trip_id: tripId, journeys: clean(c.journeys), price: c.price, currency: 'KRW', note: c.note,
+    dep_airport: first?.dep_airport ?? '', arr_airport: c.journeys[0]?.[c.journeys[0].length - 1]?.arr_airport ?? '',
+    dep_date: first?.dep_at ? first.dep_at.slice(0, 10) : null, airline: first?.flight_no ?? '', cabin: first?.cabin ?? 'economy',
+  };
+  if (c.id) return supabase.from('flight_options').update(row).eq('id', c.id).select('id').single();
+  return supabase.from('flight_options').insert(row).select('id').single();
+};
 
 /** 편명 앞 두 글자(IATA 항공사 코드) */
 export const airlineCode = (flightNo: string) => {
@@ -52,27 +85,8 @@ export const AIRLINES: Record<string, string> = {
   QF: '콴타스항공', NZ: '에어뉴질랜드', OM: '몽골항공', MR: '훈누에어', HU: '하이난항공',
 };
 
-/** 항공권 확정 여부: 모든 구간에 편명, 출발/도착 공항, 출발 날짜가 있음 */
-export const flightsComplete = (segs: Flight[]) =>
-  segs.length > 0 && segs.every((s) => s.flight_no && s.dep_airport && s.arr_airport && s.dep_date);
-export const flightsTouched = (segs: Flight[]) => segs.some((s) => s.flight_no || s.dep_airport || s.arr_airport || s.dep_time || s.arr_time);
-
-export type Cabin = 'economy' | 'premium' | 'business' | 'first';
-export const CABINS: Record<Cabin, string> = { economy: '이코노미', premium: '프리미엄 이코노미', business: '비즈니스', first: '퍼스트' };
-export interface FlightOption {
-  id: string; trip_id: string; dep_airport: string; arr_airport: string; dep_date: string | null; dep_time?: string | null;
-  airline: string; price: number | null; currency: string; cabin: Cabin; note: string;
-  trip_type?: FlightMode; legs?: OptionLeg[];
-}
-/** 후보 항공권의 한 구간 */
-export interface OptionLeg { dep: string; arr: string; date: string; time: string }
-
-/** "KE", "KE703", "대한항공" 같은 입력에서 항공사 코드를 찾는다 */
-export const resolveAirline = (text: string) => {
-  const t = text.trim();
-  const code = airlineCode(t);
-  if (code) return code;
-  if (!t) return null;
-  const hit = Object.entries(AIRLINES).find(([, name]) => name === t || name.replace('항공', '') === t.replace('항공', ''));
-  return hit ? hit[0] : null;
+/** "KE703" -> "대한항공 KE703", "대한항공" -> "대한항공" */
+export const flightLabel = (no: string) => {
+  const c = airlineCode(no);
+  return c && AIRLINES[c] ? `${AIRLINES[c]} ${no}` : no;
 };
