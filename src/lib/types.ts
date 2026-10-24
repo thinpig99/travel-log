@@ -106,6 +106,7 @@ export interface ScheduleItem {
   currency?: string;
   amount?: number | null;
   flight_id?: string | null;
+  entry_id?: string | null;
 }
 
 export interface Profile {

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { fetchEntryAuth, type EntryAuth } from '../lib/entry';
 import { loadCountries } from '../lib/geo';
-import type { Trip } from '../lib/types';
+import type { PrepStatus, Trip } from '../lib/types';
+import { useCountryDone } from '../lib/countryDone';
 import { tripCountries } from './VisaInfo';
 
-export default function ArrivalInfo({ trip }: { trip: Trip }) {
+export default function ArrivalInfo({ trip, itemId, onStatus }: { trip: Trip; itemId?: string; onStatus?: (s: PrepStatus) => void }) {
+  const cd = useCountryDone(trip.id, itemId, 'arrival');
   const ccs = tripCountries(trip);
   const [rows, setRows] = useState<EntryAuth[] | null>(null);
   const [names, setNames] = useState<Record<string, string>>({});
@@ -13,6 +15,13 @@ export default function ArrivalInfo({ trip }: { trip: Trip }) {
     fetchEntryAuth(ccs).then((a) => setRows(a.filter((x) => x.kind === 'arrival')));
     loadCountries().then((m) => setNames(Object.fromEntries(Object.keys(m).map((k) => [k, m[k][0]]))));
   }, [ccs.join()]);
+
+  const required = rows ? ccs.filter((cc) => rows.some((x) => x.cc === cc)) : null;
+  useEffect(() => {
+    if (!onStatus || !required || !cd.loaded) return;
+    const n = required.filter((cc) => cd.isDone(cc)).length;
+    onStatus(required.length === 0 || n === required.length ? 'done' : n > 0 ? 'doing' : 'todo');
+  }, [required?.join(), cd.loaded, required?.map((cc) => cd.isDone(cc)).join()]);
 
   if (!ccs.length) return <div className="ok-box"><b>등록할 게 없어요</b><span>국내 여행이에요.</span></div>;
   if (!rows) return <p className="small muted">불러오는 중</p>;
@@ -33,6 +42,11 @@ export default function ArrivalInfo({ trip }: { trip: Trip }) {
             <span>등록 시기: {r.timing}</span>
             {r.note && <span>{r.note}</span>}
             <a href={r.url} target="_blank" rel="noreferrer" className="box-link">공식 사이트에서 등록하기 ›</a>
+            {itemId && (
+              <button className={`done-toggle ${cd.isDone(cc) ? 'on' : ''}`} onClick={() => cd.toggle(cc)}>
+                {cd.isDone(cc) ? '등록했어요' : '등록했으면 눌러주세요'}
+              </button>
+            )}
           </div>
         );
       })}

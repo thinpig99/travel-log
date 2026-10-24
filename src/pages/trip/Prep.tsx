@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { costLabel, parseDate, todayStr } from '../../lib/format';
 import { fetchJourneys, isFlightItem, journeysComplete } from '../../lib/flights';
+import { isSettleItem, kindOf } from '../../lib/entries';
+import { isVisaItem } from '../../components/VisaInfo';
+import { isArrivalItem } from '../../lib/entry';
 import { checkPassport, fetchPassport, isPassportItem, loadRules, type PassportState } from '../../lib/passport';
 import { NEXT_STATUS, STAGES, STAGE_WHEN, STATUS_LABEL, type PrepItem, type Trip } from '../../lib/types';
 
@@ -104,7 +107,7 @@ export default function Prep({ trip, items, setItems }: Props) {
                   {isPassportItem(i) && pState && <span className={`xs pass-hint ${pState}`}>{PASS_HINT[pState]}</span>}
                   {i.note && <span className="xs muted ellipsis">{i.note.split('\n')[0]}</span>}
                 </div>
-                {isPassportItem(i) || isFlightItem(i) ? (
+                {isPassportItem(i) || isFlightItem(i) || kindOf(i) || isVisaItem(i) || isArrivalItem(i) || isSettleItem(i) ? (
                   <span className={`badge ${i.status}`} title="여권 정보로 자동으로 바뀌어요">{STATUS_LABEL[i.status]}</span>
                 ) : (
                 <button

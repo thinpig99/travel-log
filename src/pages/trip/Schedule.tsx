@@ -73,8 +73,8 @@ export default function Schedule({ trip, items, setItems }: Props) {
               </span>
               <span className="small muted" style={{ textAlign: 'right' }}>{costLabel(i)}</span>
             </div>
-            {open === i.id && i.flight_id && <p className="notice small" style={{ marginTop: 8 }}>항공편 일정은 준비 탭의 항공권에서 고칠 수 있어요.</p>}
-            {open === i.id && !i.flight_id && <SchedForm ctx={ctx} item={i} onSave={(p) => update(i.id, p)} onRemove={() => remove(i.id)} onCancel={() => setOpen(null)} />}
+            {open === i.id && (i.flight_id || i.entry_id) && <p className="notice small" style={{ marginTop: 8 }}>{i.flight_id ? '항공편 일정은 준비 탭의 항공권에서 고칠 수 있어요.' : '이 일정은 준비 탭에서 넣은 거라, 준비 탭의 해당 항목에서 고칠 수 있어요.'}</p>}
+            {open === i.id && !i.flight_id && !i.entry_id && <SchedForm ctx={ctx} item={i} onSave={(p) => update(i.id, p)} onRemove={() => remove(i.id)} onCancel={() => setOpen(null)} />}
           </div>
         ))}
         {adding ? (

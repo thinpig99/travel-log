@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { TRIP_SELECT } from '../lib/trips';
@@ -12,6 +12,9 @@ import ArrivalInfo from '../components/ArrivalInfo';
 import { isArrivalItem } from '../lib/entry';
 import FlightsPanel from '../components/flights/FlightsPanel';
 import { isFlightItem } from '../lib/flights';
+import EntriesPanel from '../components/entries/EntriesPanel';
+import SettlePanel from '../components/entries/SettlePanel';
+import { isSettleItem, kindOf } from '../lib/entries';
 import { isPassportItem } from '../lib/passport';
 
 export default function PrepDetail() {
@@ -73,12 +76,40 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
   };
 
   const flightItem = isFlightItem(item);
+  const kind = kindOf(item);
+  const visaItem = isVisaItem(item);
+  const arrivalItem = isArrivalItem(item);
+  const settleItem = isSettleItem(item);
+  const special = flightItem || !!kind || visaItem || arrivalItem || settleItem;
+  const HINT: Record<string, string> = {
+    flight: '후보를 넣으면 진행 중, 확정 항공편을 넣으면 완료로 자동으로 바뀌어요.',
+    lodging: '후보를 넣으면 진행 중, 예약한 숙소를 넣으면 완료로 바뀌어요.',
+    sight: '가볼 곳을 넣으면 진행 중, 모두 날짜를 정하면 완료예요.',
+    food: '맛집을 넣으면 진행 중, 모두 날짜를 정하면 완료예요.',
+    shopping: '살 것을 넣으면 진행 중, 모두 사면 완료예요.',
+    roaming: '상품을 넣으면 진행 중, 구매 완료가 하나라도 있으면 완료예요.',
+    insurance: '보험을 넣으면 진행 중, 가입 완료가 하나라도 있으면 완료예요.',
+    transport: '교통편을 넣으면 진행 중, 모두 예약·구매하면 완료예요.',
+    exchange: '환전 계획을 넣으면 진행 중, 모두 환전하면 완료예요.',
+    packing: '목록을 만들면 진행 중, 모두 챙기면 완료예요.',
+    visa: '필요한 비자·전자여행허가를 모두 받았다고 표시하면 완료예요.',
+    arrival: '필요한 사전 등록을 모두 했다고 표시하면 완료예요.',
+    settle: '비용을 확인하고 정산을 마쳤다고 표시하면 완료예요.',
+  };
+  const hintKey = flightItem ? 'flight' : kind ?? (visaItem ? 'visa' : arrivalItem ? 'arrival' : settleItem ? 'settle' : '');
   const [autoStatus, setAutoStatus] = useState<PrepStatus | null>(null);
   const [flightCost, setFlightCost] = useState<number | null>(item.cost);
   const shownStatus = autoStatus ?? status;
+  const statusRef = useRef(item.status);
+  const costRef = useRef(item.cost);
   const onFlightStatus = (st: PrepStatus) => {
     setAutoStatus(st);
-    if (st !== status) { setStatus(st); supabase.from('prep_items').update({ status: st }).eq('id', item.id).then(() => {}); }
+    if (st !== statusRef.current) { statusRef.current = st; setStatus(st); supabase.from('prep_items').update({ status: st }).eq('id', item.id).then(() => {}); }
+  };
+  const onEntryCost = (n: number | null) => {
+    if (n === costRef.current) return;
+    costRef.current = n;
+    supabase.from('prep_items').update({ cost: n, currency: 'KRW', amount: null }).eq('id', item.id).then(() => {});
   };
 
   const save = async () => {
@@ -107,7 +138,7 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
       <main className="page" style={{ paddingTop: 4 }}>
         <div className="stack gap8">
           <span className="small muted">{item.stage}단계 · {STAGES[item.stage]}</span>
-          {flightItem ? (
+          {special ? (
             <div className="row between" style={{ alignItems: 'center' }}>
               <h1 className="title">{item.title}</h1>
               <span className={`badge ${shownStatus}`}>{STATUS_LABEL[shownStatus]}</span>
@@ -115,16 +146,18 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
           ) : (
             <input className="title-input" value={title} maxLength={40} onChange={(e) => setTitle(e.target.value)} aria-label="항목 이름" placeholder="항목 이름 (예: 항공권 예매)" />
           )}
-          {flightItem && <span className="xs muted">후보를 넣으면 진행 중, 확정 항공편을 넣으면 완료로 자동으로 바뀌어요.</span>}
+          {special && <span className="xs muted">{HINT[hintKey]}</span>}
         </div>
 
-        {isVisaItem(item) && <VisaInfo trip={trip} />}
-        {isArrivalItem(item) && <ArrivalInfo trip={trip} />}
+        {visaItem && <VisaInfo trip={trip} itemId={item.id} onStatus={onFlightStatus} />}
+        {arrivalItem && <ArrivalInfo trip={trip} itemId={item.id} onStatus={onFlightStatus} />}
+        {kind && <EntriesPanel trip={trip} itemId={item.id} kind={kind} onStatus={onFlightStatus} onCost={onEntryCost} />}
+        {settleItem && <SettlePanel trip={trip} itemId={item.id} status={shownStatus} onStatus={onFlightStatus} />}
 
         {flightItem && <FlightsPanel trip={trip} itemId={item.id} cost={flightCost} onStatus={onFlightStatus} onCost={setFlightCost} />}
-        {flightItem && <NoteBlock itemId={item.id} note={note} onSaved={setNote} />}
+        {special && <NoteBlock itemId={item.id} note={note} onSaved={setNote} hint={flightItem ? '예약번호, 수하물 규정, 좌석 같은 걸 적어두세요' : '참고할 내용을 자유롭게 적어두세요'} />}
 
-        {!flightItem && (<>
+        {!special && (<>
         <div className="field">
           <span>진행 상태</span>
           <div className="seg" role="radiogroup" aria-label="진행 상태">
@@ -163,7 +196,7 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
           </div>
         )}
       </main>
-      {!flightItem && (
+      {!special && (
         <div className="bottom-bar">
           <button className="btn grow" disabled={busy} onClick={save}>저장</button>
         </div>
@@ -173,7 +206,7 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
 }
 
 /** 메모: 평소에는 보기만, 누르면 시트에서 고친다 */
-function NoteBlock({ itemId, note, onSaved }: { itemId: string; note: string; onSaved: (s: string) => void }) {
+function NoteBlock({ itemId, note, onSaved, hint }: { itemId: string; note: string; onSaved: (s: string) => void; hint: string }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(note);
   const [busy, setBusy] = useState(false);
@@ -196,7 +229,7 @@ function NoteBlock({ itemId, note, onSaved }: { itemId: string; note: string; on
     <section className="stack gap8">
       <b style={{ fontSize: 15 }}>메모</b>
       <button className="note-view" onClick={() => { setText(note); setErr(''); setOpen(true); }}>
-        {note ? note : <span className="muted">예약번호, 수하물 규정, 좌석 같은 걸 적어두세요</span>}
+        {note ? note : <span className="muted">{hint}</span>}
       </button>
       {open && (
         <div className="sheet-wrap" role="dialog" aria-modal="true" aria-label="메모" onClick={() => setOpen(false)}>

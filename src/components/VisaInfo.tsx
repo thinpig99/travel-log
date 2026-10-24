@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { parseDate } from '../lib/format';
 import { fetchEntryAuth, type EntryAuth } from '../lib/entry';
-import type { Trip } from '../lib/types';
+import type { PrepStatus, Trip } from '../lib/types';
+import { useCountryDone } from '../lib/countryDone';
 
 interface Visa { cc: string; name_ko: string; general_period: string; basis: string; remark: string; synced_at: string }
 
@@ -15,7 +16,8 @@ const md = (s: string) => { const d = parseDate(s.slice(0, 10)); return `${d.get
 
 export const tripCountries = (trip: Trip) => [...new Set((trip.trip_cities ?? []).map((x) => x.cities.country_code))].filter((c) => c !== 'KR');
 
-export default function VisaInfo({ trip }: { trip: Trip }) {
+export default function VisaInfo({ trip, itemId, onStatus }: { trip: Trip; itemId?: string; onStatus?: (s: PrepStatus) => void }) {
+  const cd = useCountryDone(trip.id, itemId, 'visa');
   const ccs = tripCountries(trip);
   const [rows, setRows] = useState<Visa[] | null>(null);
   const [auth, setAuth] = useState<EntryAuth[]>([]);
@@ -26,6 +28,18 @@ export default function VisaInfo({ trip }: { trip: Trip }) {
       .then(({ data }) => setRows((data as Visa[]) ?? []));
     fetchEntryAuth(ccs).then((a) => setAuth(a.filter((x) => x.kind === 'eta')));
   }, [ccs.join()]);
+
+  const required = rows ? ccs.filter((cc) => {
+    const v = rows.find((r) => r.cc === cc);
+    if (!v) return false;
+    const need = v.general_period.trim().toUpperCase() === 'X' || !v.general_period.trim();
+    return need || auth.some((a) => a.cc === cc && a.status === 'active');
+  }) : null;
+  useEffect(() => {
+    if (!onStatus || !required || !cd.loaded) return;
+    const n = required.filter((cc) => cd.isDone(cc)).length;
+    onStatus(required.length === 0 || n === required.length ? 'done' : n > 0 ? 'doing' : 'todo');
+  }, [required?.join(), cd.loaded, required?.map((cc) => cd.isDone(cc)).join()]);
 
   if (!ccs.length) return <div className="ok-box"><b>비자가 필요 없어요</b><span>국내 여행이에요.</span></div>;
   if (!rows) return <p className="small muted">외교부 비자 정보를 불러오는 중</p>;
@@ -62,6 +76,11 @@ export default function VisaInfo({ trip }: { trip: Trip }) {
             {!need && !etaActive && <span>비자 없이 이 기간 동안 머물 수 있어요.</span>}
             {!need && eta?.status === 'upcoming' && <span>{eta.name}: {eta.note}</span>}
             {lines.filter((l) => !(etaActive && /eTA|ESTA|ETA/i.test(l))).map((l, i) => <span key={i}>{l}</span>)}
+            {itemId && (need || etaActive) && (
+              <button className={`done-toggle ${cd.isDone(cc) ? 'on' : ''}`} onClick={() => cd.toggle(cc)}>
+                {cd.isDone(cc) ? `${need ? '비자' : eta!.name} 받았어요` : `${need ? '비자' : eta!.name}를 받았으면 눌러주세요`}
+              </button>
+            )}
           </div>
         );
       })}
