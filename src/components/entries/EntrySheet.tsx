@@ -60,7 +60,12 @@ export default function EntrySheet({ def, entry, initialDone, cities, currencies
           </div>
         );
       default:
-        return <input value={v} placeholder={f.placeholder} inputMode={f.type === 'url' ? 'url' : undefined} onChange={(e) => set(f.key, e.target.value)} />;
+        return (
+          <>
+            <input value={v} placeholder={f.placeholder} inputMode={f.type === 'url' ? 'url' : undefined} list={f.options ? `dl-${f.key}` : undefined} onChange={(e) => set(f.key, e.target.value)} />
+            {f.options && <datalist id={`dl-${f.key}`}>{f.options.map((o) => <option key={o} value={o} />)}</datalist>}
+          </>
+        );
     }
   };
 
