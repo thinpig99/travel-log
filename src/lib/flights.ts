@@ -62,7 +62,10 @@ export const CABINS: Record<Cabin, string> = { economy: '이코노미', premium:
 export interface FlightOption {
   id: string; trip_id: string; dep_airport: string; arr_airport: string; dep_date: string | null; dep_time?: string | null;
   airline: string; price: number | null; currency: string; cabin: Cabin; note: string;
+  trip_type?: FlightMode; legs?: OptionLeg[];
 }
+/** 후보 항공권의 한 구간 */
+export interface OptionLeg { dep: string; arr: string; date: string; time: string }
 
 /** "KE", "KE703", "대한항공" 같은 입력에서 항공사 코드를 찾는다 */
 export const resolveAirline = (text: string) => {

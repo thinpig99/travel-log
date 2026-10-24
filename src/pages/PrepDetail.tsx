@@ -11,7 +11,7 @@ import VisaInfo, { isVisaItem } from '../components/VisaInfo';
 import ArrivalInfo from '../components/ArrivalInfo';
 import { isArrivalItem } from '../lib/entry';
 import FlightEditor, { fitSegments } from '../components/FlightEditor';
-import { fetchFlights, flightsComplete, flightsTouched, isFlightItem, saveFlights, type Flight, type FlightMode, type FlightOption } from '../lib/flights';
+import { fetchFlights, flightsComplete, flightsTouched, isFlightItem, resolveAirline, saveFlights, type Flight, type FlightMode, type FlightOption } from '../lib/flights';
 import FlightOptions from '../components/FlightOptions';
 import { isPassportItem } from '../lib/passport';
 
@@ -99,6 +99,19 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
   };
   const pickOption = (o: FlightOption) => {
     if (!segs) return;
+    if (o.legs?.length && o.trip_type) {
+      // 후보의 여정 종류와 구간을 그대로 확정 항공편으로 옮긴다 (이미 적은 편명은 살린다)
+      if (flightsComplete(segs)) return setErr('확정 항공편이 모두 채워져 있어요. 바꿀 항공편의 내용을 먼저 지워주세요.');
+      const code = resolveAirline(o.airline) ?? '';
+      setMode(o.trip_type);
+      setSegs(o.legs.map((l, i) => {
+        const s = segs[i];
+        return { id: s?.id, flight_no: s?.flight_no || code, dep_airport: l.dep, arr_airport: l.arr, dep_date: l.date, dep_time: l.time, arr_date: s?.arr_date || l.date, arr_time: s?.arr_time ?? '' };
+      }));
+      setErr('');
+      document.getElementById('confirmed-flights')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     const date = o.dep_date ?? '';
     const code = (o.airline.match(/^[A-Z0-9]{2}$/i) ? o.airline.toUpperCase() : '');
     const fill = (s: Flight): Flight => ({ ...s, dep_airport: o.dep_airport, arr_airport: o.arr_airport, dep_date: date || s.dep_date, arr_date: date || s.arr_date, dep_time: (o.dep_time ?? '').slice(0, 5) || s.dep_time, flight_no: s.flight_no || code });
