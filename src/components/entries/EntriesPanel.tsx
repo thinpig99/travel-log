@@ -8,6 +8,8 @@ import {
 import type { PrepStatus, Trip } from '../../lib/types';
 import { useTripCurrencies } from '../CostInput';
 import EntrySheet from './EntrySheet';
+import SpotSuggest from './SpotSuggest';
+import { mapsLink } from '../../lib/suggest';
 
 /** 준비 항목 공통 화면: 보기 카드 + 입력 시트, 상태와 비용은 내용으로 자동 */
 export default function EntriesPanel({ trip, itemId, kind, onStatus, onCost }: {
@@ -16,7 +18,7 @@ export default function EntriesPanel({ trip, itemId, kind, onStatus, onCost }: {
   const def = KINDS[kind];
   const range = { start: trip.start_date, end: trip.end_date };
   const [es, setEs] = useState<Entry[] | null>(null);
-  const [sheet, setSheet] = useState<{ entry: Entry | null; done: boolean } | null>(null);
+  const [sheet, setSheet] = useState<{ entry: Entry | null; done: boolean; preset?: Data } | null>(null);
   const [rates, setRates] = useState<Record<string, number> | null>(null);
   const [quick, setQuick] = useState('');
   const [err, setErr] = useState('');
@@ -84,6 +86,9 @@ export default function EntriesPanel({ trip, itemId, kind, onStatus, onCost }: {
             <a className="link-chip" href={/^https?:\/\//.test(e.data.link) ? e.data.link : `https://${e.data.link}`} target="_blank" rel="noreferrer"
               onClick={(ev) => ev.stopPropagation()}>링크 열기</a>
           )}
+          {!e.data.link && (kind === 'sight' || kind === 'food') && e.data.name && (
+            <a className="link-chip" href={mapsLink(e.data.name, e.data.city)} target="_blank" rel="noreferrer" onClick={(ev) => ev.stopPropagation()}>지도</a>
+          )}
           {!def.groups && (
             def.autoDone ? (
               <span className={`badge ${e.done ? 'done' : 'todo'}`}>{def.doneLabel[e.done ? 1 : 0]}</span>
@@ -97,7 +102,7 @@ export default function EntriesPanel({ trip, itemId, kind, onStatus, onCost }: {
   };
 
   const sheetEl = sheet && (
-    <EntrySheet def={def} entry={sheet.entry} initialDone={sheet.done} cities={cities} currencies={currencies}
+    <EntrySheet def={def} entry={sheet.entry} preset={sheet.preset} initialDone={sheet.done} cities={cities} currencies={currencies}
       trip={{ start: trip.start_date ?? '', end: trip.end_date ?? '' }}
       onSave={(data, done) => save(sheet.entry, data, done)} onDelete={sheet.entry ? () => remove(sheet.entry!) : undefined} onClose={() => setSheet(null)} />
   );
@@ -176,6 +181,49 @@ export default function EntriesPanel({ trip, itemId, kind, onStatus, onCost }: {
           {on.map((e) => card(e, true))}
           <button className="add-dashed" onClick={() => setSheet({ entry: null, done: true })}>+ 예약한 숙소 추가</button>
         </section>
+        {sheetEl}
+      </>
+    );
+  }
+
+  // 관광, 맛집: 여행 도시별 구역
+  if (kind === 'sight' || kind === 'food') {
+    const tcs = [...(trip.trip_cities ?? [])].sort((a, b) => a.sort - b.sort).map((x) => x.cities);
+    const names = tcs.map((c) => cityLabel(c));
+    const others = es.filter((e) => !names.includes(e.data.city ?? ''));
+    const addSpot = async (title: string, city: string, link: string) => {
+      const { error } = await saveEntry(def, { trip_id: trip.id, item_id: itemId, data: { name: title, city, link }, done: false, sort: es.length });
+      if (error) return setErr(errorText(error));
+      await reload();
+    };
+    return (
+      <>
+        {tcs.map((c, i) => {
+          const name = names[i];
+          const list = es.filter((e) => e.data.city === name);
+          return (
+            <section key={c.id} className="stack gap8">
+              <div className="row between">
+                <b style={{ fontSize: 16 }}>{name}</b>
+                <span className="xs muted">{list.length ? `${list.filter((e) => e.done).length}/${list.length} 일정에 있음` : ''}</span>
+              </div>
+              {list.map((e) => card(e, e.done))}
+              <button className="add-dashed" onClick={() => setSheet({ entry: null, done: false, preset: { city: name } })}>{def.add.replace('+ ', `+ ${name}에 `)}</button>
+              {kind === 'sight' && c.lat != null && c.lng != null && (
+                <SpotSuggest city={name} lat={c.lat} lng={c.lng} added={list.map((e) => e.data.name)}
+                  onAdd={(s) => addSpot(s.title, name, mapsLink(s.title, name))} />
+              )}
+            </section>
+          );
+        })}
+        {(others.length > 0 || tcs.length === 0) && (
+          <section className="stack gap8">
+            <b style={{ fontSize: 16 }}>{tcs.length ? '그 밖의 곳' : '목록'}</b>
+            {others.map((e) => card(e, e.done))}
+            {tcs.length === 0 && <button className="add-dashed" onClick={() => setSheet({ entry: null, done: false })}>{def.add}</button>}
+          </section>
+        )}
+        {err && <p className="error" role="alert">{err}</p>}
         {sheetEl}
       </>
     );

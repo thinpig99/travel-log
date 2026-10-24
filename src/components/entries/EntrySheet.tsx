@@ -5,12 +5,12 @@ const fmtNum = (s: string) => (s ? Number(s).toLocaleString('ko-KR') : '');
 const timeFmt = (raw: string) => { const d = raw.replace(/\D/g, '').slice(0, 4); return d.length > 2 ? `${d.slice(0, 2)}:${d.slice(2)}` : d; };
 
 /** 항목 하나를 고치는 아래 시트 */
-export default function EntrySheet({ def, entry, initialDone, cities, currencies, trip, onSave, onDelete, onClose }: {
-  def: KindDef; entry: Entry | null; initialDone: boolean; cities: string[]; currencies: string[];
+export default function EntrySheet({ def, entry, preset, initialDone, cities, currencies, trip, onSave, onDelete, onClose }: {
+  def: KindDef; entry: Entry | null; preset?: Data; initialDone: boolean; cities: string[]; currencies: string[];
   trip: { start: string; end: string };
   onSave: (data: Data, done: boolean) => Promise<string | null>; onDelete?: () => void; onClose: () => void;
 }) {
-  const [d, setD] = useState<Data>({ ...(entry?.data ?? {}) });
+  const [d, setD] = useState<Data>({ ...(entry?.data ?? preset ?? {}) });
   const [done, setDone] = useState(entry?.done ?? initialDone);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
