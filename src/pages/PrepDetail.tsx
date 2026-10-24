@@ -7,6 +7,7 @@ import { STAGES, STATUS_LABEL, type PrepItem, type PrepStatus, type Trip } from 
 import { IconBack } from '../components/Icons';
 import { CostInput, useCost, useTripCurrencies } from '../components/CostInput';
 import PassportCheck from '../components/PassportCheck';
+import VisaInfo, { isVisaItem } from '../components/VisaInfo';
 import { isPassportItem } from '../lib/passport';
 
 export default function PrepDetail() {
@@ -95,6 +96,8 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
           <span className="small muted">{item.stage}단계 · {STAGES[item.stage]}</span>
           <input className="title-input" value={title} maxLength={40} onChange={(e) => setTitle(e.target.value)} aria-label="항목 이름" placeholder="항목 이름 (예: 항공권 예매)" />
         </div>
+
+        {isVisaItem(item) && <VisaInfo trip={trip} />}
 
         <div className="field">
           <span>진행 상태</span>
