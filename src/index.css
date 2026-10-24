@@ -229,11 +229,12 @@ textarea.input.note-area { min-height: 220px; line-height: 1.6; }
 .tl-when { font-size: 11px; color: var(--muted); font-weight: 500; margin-left: 6px; }
 .tl-now { font-size: 11px; font-weight: 700; color: #fff; background: var(--gold); border-radius: 8px; padding: 1px 7px; margin-left: 6px; }
 .tl-title { display: flex; align-items: center; flex-wrap: wrap; min-width: 0; }
-.flight-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 16px; background: #f4f6fb; border: 1px solid var(--line); }
-.flight-no { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; align-items: center; }
-.flight-leg { display: grid; grid-template-columns: 32px 76px minmax(0, 1fr); gap: 6px; align-items: center; }
-.flight-leg .leg-date { grid-column: 2 / span 2; }
-.flight-leg .input { padding: 0 8px; font-size: 15px; }
+.flight-card { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 16px; background: #f4f6fb; border: 1px solid var(--line); }
+.flight-no { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.flight-no .input { height: 40px; }
+.fl-name { white-space: nowrap; }
+.flight-leg { display: grid; grid-template-columns: 26px 54px minmax(0, 1fr) 70px; gap: 5px; align-items: center; }
+.flight-leg .input { height: 40px; padding: 0 8px; font-size: 14px; min-width: 0; }
 .leg-label { font-size: 12px; font-weight: 700; color: var(--ink-2); }
 .air-logo { border-radius: 8px; background: #fff; object-fit: contain; box-shadow: 0 0 0 1px var(--line); display: inline-grid; place-items: center; flex: none; }
 .air-logo.code { font-weight: 800; color: var(--brand-ink); background: var(--brand-soft); }
@@ -253,11 +254,14 @@ textarea.input.note-area { min-height: 220px; line-height: 1.6; }
 .mini-seg { display: inline-flex; padding: 2px; border-radius: 9px; background: var(--soft); }
 .mini-seg button { height: 26px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; font-size: 12px; color: var(--ink-2); cursor: pointer; }
 .mini-seg button.on { background: #fff; color: var(--brand-ink); font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
-.leg { display: flex; flex-direction: column; gap: 6px; }
-.leg-route { display: grid; grid-template-columns: 64px 12px 64px 1fr; gap: 6px; align-items: center; }
-.leg-auto { grid-column: 1 / 4; font-size: 13px; color: var(--muted); padding-left: 2px; }
-.leg-x { justify-self: end; width: 28px; height: 28px; border: 0; background: transparent; color: var(--muted); font-size: 18px; cursor: pointer; }
-.leg-when { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 6px; }
+.leg { display: grid; grid-template-columns: 50px 10px 50px minmax(0, 1fr) 66px; gap: 5px; align-items: center; }
+.leg .input { padding: 0 7px; font-size: 13px; min-width: 0; }
+.leg .ph-wrap .ph { left: 8px; font-size: 13px; }
+.leg-route { display: contents; }
+.leg-auto { grid-column: 1 / 4; font-size: 12px; color: var(--muted); padding-left: 2px; white-space: nowrap; overflow: hidden; }
+.leg-x { width: 20px; height: 28px; padding: 0; border: 0; background: transparent; color: var(--muted); font-size: 18px; cursor: pointer; }
+.leg-when { display: contents; }
+.leg.has-x { grid-template-columns: 48px 8px 48px minmax(0, 1fr) 62px 18px; gap: 4px; }
 .cand-bottom { display: grid; grid-template-columns: minmax(0, 1fr) 92px 108px; gap: 6px; padding-top: 2px; }
 .ph-wrap { position: relative; display: block; min-width: 0; }
 .ph-wrap .input { width: 100%; }

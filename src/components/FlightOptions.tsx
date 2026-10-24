@@ -149,7 +149,7 @@ function OptionRow({ tripId, n, draft, cheapest, onChange, onSaved, onRemove, on
       {d.legs.map((l, i) => {
         const roundBack = d.mode === 'round' && i === 1;
         return (
-          <div key={i} className="leg">
+          <div key={i} className={`leg ${d.mode === 'multi' && d.legs.length > 2 ? 'has-x' : ''}`}>
             <div className="leg-route">
               {roundBack ? (
                 <span className="leg-auto">{l.dep || '도착지'} → {l.arr || '출발지'}</span>
@@ -160,14 +160,14 @@ function OptionRow({ tripId, n, draft, cheapest, onChange, onSaved, onRemove, on
                   <input className="input sm" value={l.arr} maxLength={3} placeholder="HND" aria-label={`후보 ${n} ${i + 1}구간 도착 공항`} onChange={(e) => setLeg(i, { arr: code(e.target.value) })} />
                 </>
               )}
-              {d.mode === 'multi' && d.legs.length > 2 && (
-                <button className="leg-x" aria-label={`${i + 1}구간 지우기`} onClick={() => change({ legs: d.legs.filter((_, j) => j !== i) })}>×</button>
-              )}
             </div>
             <div className="leg-when">
               <PhInput type="date" value={l.date} ph={legLabel(i)} label={`후보 ${n} ${legLabel(i)}`} onChange={(v) => setLeg(i, { date: v })} />
               <PhInput type="time" value={l.time} ph="시간" label={`후보 ${n} ${i + 1}구간 출발 시간`} onChange={(v) => setLeg(i, { time: v })} />
             </div>
+            {d.mode === 'multi' && d.legs.length > 2 && (
+                <button className="leg-x" aria-label={`${i + 1}구간 지우기`} onClick={() => change({ legs: d.legs.filter((_, j) => j !== i) })}>×</button>
+              )}
           </div>
         );
       })}

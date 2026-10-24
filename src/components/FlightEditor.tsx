@@ -58,25 +58,25 @@ export default function FlightEditor({ mode, segs, start, end, onMode, onChange 
               )}
             </div>
             <div className="flight-no">
-              <AirlineLogo flightNo={s.flight_no} size={36} />
+              <AirlineLogo flightNo={s.flight_no} size={32} />
               <input className="input" value={s.flight_no} maxLength={8} placeholder="편명 (예: KE703)" aria-label="편명" autoCapitalize="characters"
                 onChange={(e) => set(i, { flight_no: e.target.value.toUpperCase().replace(/\s/g, '') })} />
+              {code && <span className="xs muted fl-name">{AIRLINES[code] ?? code}</span>}
             </div>
-            {code && <span className="xs muted" style={{ marginTop: -4 }}>{AIRLINES[code] ?? `항공사 코드 ${code}`}</span>}
             <div className="flight-leg">
               <span className="leg-label">출발</span>
               <input className="input" value={s.dep_airport} maxLength={4} placeholder="ICN" aria-label="출발 공항" autoCapitalize="characters"
                 onChange={(e) => set(i, { dep_airport: e.target.value.toUpperCase() })} />
-              <input className="input" type="time" value={s.dep_time} aria-label="출발 시간" onChange={(e) => set(i, { dep_time: e.target.value })} />
               <input className="input leg-date" type="date" value={s.dep_date} aria-label="출발 날짜"
                 onChange={(e) => set(i, { dep_date: e.target.value, arr_date: !s.arr_date || s.arr_date < e.target.value ? e.target.value : s.arr_date })} />
+              <input className="input" type="time" value={s.dep_time} aria-label="출발 시간" onChange={(e) => set(i, { dep_time: e.target.value })} />
             </div>
             <div className="flight-leg">
               <span className="leg-label">도착</span>
               <input className="input" value={s.arr_airport} maxLength={4} placeholder="NRT" aria-label="도착 공항" autoCapitalize="characters"
                 onChange={(e) => set(i, { arr_airport: e.target.value.toUpperCase() })} />
-              <input className="input" type="time" value={s.arr_time} aria-label="도착 시간" onChange={(e) => set(i, { arr_time: e.target.value })} />
               <input className="input leg-date" type="date" value={s.arr_date} aria-label="도착 날짜" onChange={(e) => set(i, { arr_date: e.target.value })} />
+              <input className="input" type="time" value={s.arr_time} aria-label="도착 시간" onChange={(e) => set(i, { arr_time: e.target.value })} />
             </div>
           </div>
         );
