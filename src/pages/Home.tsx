@@ -9,6 +9,8 @@ import WorldMap, { type Visit } from '../components/WorldMap';
 import TabBar from '../components/TabBar';
 import { IconPin, IconPlus, IconTemplate, IconTicket } from '../components/Icons';
 
+const PAGE = 5;
+
 export default function Home() {
   const { profile } = useAuth();
   const nav = useNavigate();
@@ -29,6 +31,7 @@ export default function Home() {
   }, []);
 
   const upcoming = useMemo(() => trips.filter(isUpcoming).sort((a, b) => sortKey(a).localeCompare(sortKey(b))), [trips]);
+  const [limit, setLimit] = useState(PAGE);
   const past = useMemo(
     () =>
       trips
@@ -113,7 +116,7 @@ export default function Home() {
               아래 버튼으로 다녀온 여행을 남기면 지도에 색이 칠해져요.
             </div>
           )}
-          {past.map((t) => (
+          {(cityFilter != null ? past : past.slice(0, limit)).map((t) => (
             <Link key={t.id} to={`/trips/${t.id}`} className="list-row">
               <div className="stack gap4 grow">
                 <span style={{ fontSize: 15, fontWeight: 500 }}>{t.title}</span>
@@ -124,6 +127,14 @@ export default function Home() {
               <span className="xs muted">{t.kind === 'simple' ? '간단 기록' : t.visibility === 'public' ? <b style={{ color: 'var(--brand)' }}>공개</b> : t.group_id ? '그룹' : '나만 보기'}</span>
             </Link>
           ))}
+          {cityFilter == null && past.length > limit && (
+            <button className="more-btn" onClick={() => setLimit(limit + 10)}>
+              더 보기 <span className="muted">({past.length - limit}개 남음)</span>
+            </button>
+          )}
+          {cityFilter == null && limit > PAGE && past.length <= limit && past.length > PAGE && (
+            <button className="more-btn" onClick={() => setLimit(PAGE)}>접기</button>
+          )}
         </section>
       </main>
 

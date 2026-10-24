@@ -320,3 +320,4 @@ textarea.input.note-area { min-height: 220px; line-height: 1.6; }
 .check-row.on .check-text > span:first-child { text-decoration: line-through; color: var(--muted); }
 .settle-total { display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 16px; background: var(--brand); color: #fff; }
 .settle-total .small, .settle-total .xs { color: #d5daf2; }
+.more-btn { margin-top: 8px; height: 44px; border-radius: 12px; border: 1px solid var(--line-2); background: #fff; font-size: 14px; font-weight: 600; color: var(--brand-ink); cursor: pointer; }
