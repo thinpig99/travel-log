@@ -28,7 +28,9 @@ export interface KindDef {
   /** 일정 탭에 넣을 내용 */
   schedule?: (d: Data, done: boolean) => { day: string; time: string | null; title: string; category: string; area: string; note: string } | null;
   /** 완료 상태 판단 */
-  status?: (es: Entry[]) => PrepStatus;
+  status?: (es: Entry[], t: TripRange) => PrepStatus;
+  /** 시트 아래에 보여줄 계산 결과 */
+  extra?: (d: Data) => string;
   /** 비용에 넣을 묶음: 완료된 것만 */
   costDone?: boolean;
   checklist?: boolean;
@@ -43,6 +45,33 @@ const nights = (a?: string, b?: string) => {
   return n > 0 ? `${n}박` : '';
 };
 const join = (...xs: (string | undefined | false)[]) => xs.filter(Boolean).join(' · ');
+
+/** 출발~도착 소요 시간 (같은 시간대로 계산) */
+export const travelTime = (d: Data) => {
+  if (!d.date || !d.time || !d.arr_time) return '';
+  const a = Date.parse(`${d.date}T${d.time}:00Z`), b = Date.parse(`${d.arr_date || d.date}T${d.arr_time}:00Z`);
+  const m = Math.round((b - a) / 60000);
+  if (!(m > 0)) return '';
+  const h = Math.floor(m / 60), r = m % 60;
+  return `${h ? `${h}시간` : ''}${h && r ? ' ' : ''}${r ? `${r}분` : ''}`;
+};
+
+export interface TripRange { start: string | null; end: string | null }
+
+/** 여행 기간 중 숙소가 필요한 밤 (첫날 ~ 마지막 전날) 중 예약 안 된 밤 */
+export const uncoveredNights = (es: Entry[], t: TripRange) => {
+  if (!t.start || !t.end) return [] as string[];
+  const covered = new Set<string>();
+  for (const e of es.filter((x) => x.done && x.data.checkin && x.data.checkout)) {
+    for (let d = new Date(`${e.data.checkin}T00:00:00Z`); d < new Date(`${e.data.checkout}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + 1)) covered.add(d.toISOString().slice(0, 10));
+  }
+  const out: string[] = [];
+  for (let d = new Date(`${t.start}T00:00:00Z`); d < new Date(`${t.end}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + 1)) {
+    const k = d.toISOString().slice(0, 10);
+    if (!covered.has(k)) out.push(k);
+  }
+  return out;
+};
 
 const allDone = (es: Entry[]): PrepStatus => (!es.length ? 'todo' : es.every((e) => e.done) ? 'done' : 'doing');
 
@@ -66,26 +95,41 @@ export const KINDS: Record<Kind, KindDef> = {
     add: '+ 숙소 추가',
     empty: '묵을 곳을 모아 비교해 보세요',
     schedule: (d, done) => (done && d.checkin ? { day: d.checkin, time: '15:00', title: `체크인 · ${d.name || '숙소'}`, category: '숙소', area: d.city ?? '', note: d.checkout ? `체크아웃 ${md(d.checkout)}` : '' } : null),
-    status: (es) => (!es.length ? 'todo' : es.some((e) => e.done) ? 'done' : 'doing'),
+    status: (es, t) => (!es.length ? 'todo' : es.some((e) => e.done) && uncoveredNights(es, t).length === 0 ? 'done' : 'doing'),
     costDone: true,
   },
   transport: {
     kind: 'transport',
     fields: [
-      { key: 'name', label: '이름', type: 'text', placeholder: '공항철도, JR 패스, 렌터카' },
+      { key: 'name', label: '이름', type: 'text', placeholder: '공항철도, 신칸센, 렌터카' },
+      { key: 'scope', label: '이동 범위', type: 'select', options: ['도시 간 이동', '도시 내 이동'], half: true },
       { key: 'type', label: '종류', type: 'select', options: ['공항 이동', '교통 패스', '기차', '버스', '배·페리', '렌터카', '택시', '기타'], half: true },
-      { key: 'date', label: '이용 날짜', type: 'date', half: true },
+      { key: 'from', label: '출발지', type: 'city', placeholder: '역, 공항, 항구' },
+      { key: 'to', label: '도착지', type: 'city', placeholder: '역, 공항, 항구' },
+      { key: 'date', label: '출발 날짜', type: 'date', half: true },
       { key: 'time', label: '출발 시각 (24시간)', type: 'time', half: true },
-      { key: 'price', label: '가격 (원)', type: 'price', placeholder: '30,000', half: true },
-      { key: 'memo', label: '메모', type: 'text', placeholder: '타는 곳, 예약번호, 소요 시간' },
+      { key: 'arr_date', label: '도착 날짜', type: 'date', half: true },
+      { key: 'arr_time', label: '도착 시각 (24시간)', type: 'time', half: true },
+      { key: 'price', label: '가격 (원)', type: 'price', placeholder: '30,000' },
+      { key: 'memo', label: '메모', type: 'text', placeholder: '타는 곳, 예약번호' },
     ],
-    title: (d) => d.name || d.type || '이름 없는 교통편',
-    sub: (d) => join(d.type, d.date && `${md(d.date)}${d.time ? ` ${d.time}` : ''}`, d.memo),
+    title: (d) => d.name || (d.from || d.to ? `${d.from || '?'} → ${d.to || '?'}` : d.type || '이름 없는 교통편'),
+    sub: (d) => join(
+      d.name && (d.from || d.to) ? `${d.from || '?'} → ${d.to || '?'}` : '',
+      d.date && `${md(d.date)}${d.time ? ` ${d.time}` : ''}${d.arr_time ? `-${d.arr_time}` : ''}`,
+      travelTime(d), d.scope, d.type,
+    ),
+    extra: (d) => (travelTime(d) ? `소요 시간 ${travelTime(d)}` : ''),
     price: (d) => num(d.price),
     doneLabel: ['알아보는 중', '예약·구매 완료'],
     add: '+ 교통편 추가',
-    empty: '공항 이동, 교통 패스, 렌터카 같은 걸 정리해요',
-    schedule: (d) => (d.date ? { day: d.date, time: d.time || null, title: d.name || d.type || '교통', category: '이동', area: '', note: join(d.type, d.memo) } : null),
+    empty: '공항 이동, 도시 간 기차, 페리 같은 걸 정리해요',
+    schedule: (d) => (d.date ? {
+      day: d.date, time: d.time || null,
+      title: join(d.name || d.type || '교통', d.from || d.to ? `${d.from || '?'} → ${d.to || '?'}` : ''),
+      category: '이동', area: '',
+      note: join(d.arr_time && `도착 ${d.arr_date && d.arr_date !== d.date ? `${md(d.arr_date)} ` : ''}${d.arr_time}`, travelTime(d), d.memo),
+    } : null),
     status: allDone,
     costDone: true,
   },
@@ -237,7 +281,7 @@ export const fetchEntries = async (itemId: string) => {
   return (data as Entry[]) ?? [];
 };
 
-export const entryStatus = (def: KindDef, es: Entry[]): PrepStatus => (def.status ?? allDone)(es);
+export const entryStatus = (def: KindDef, es: Entry[], t: TripRange): PrepStatus => (def.status ?? allDone)(es, t);
 export const entryCost = (def: KindDef, es: Entry[]) => {
   if (!def.price || !def.costDone) return null;
   const xs = es.filter((e) => e.done).map((e) => def.price!(e.data) ?? 0);

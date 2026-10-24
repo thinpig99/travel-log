@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { errorText, loadRates } from '../../lib/format';
 import { cityLabel } from '../../lib/geo';
 import {
-  KINDS, PACKING_DEFAULT, entryCost, entryStatus, fetchEntries, saveEntry, type Data, type Entry, type Kind,
+  KINDS, PACKING_DEFAULT, entryCost, entryStatus, fetchEntries, saveEntry, uncoveredNights, type Data, type Entry, type Kind,
 } from '../../lib/entries';
 import type { PrepStatus, Trip } from '../../lib/types';
 import { useTripCurrencies } from '../CostInput';
@@ -14,6 +14,7 @@ export default function EntriesPanel({ trip, itemId, kind, onStatus, onCost }: {
   trip: Trip; itemId: string; kind: Kind; onStatus: (s: PrepStatus) => void; onCost: (n: number | null) => void;
 }) {
   const def = KINDS[kind];
+  const range = { start: trip.start_date, end: trip.end_date };
   const [es, setEs] = useState<Entry[] | null>(null);
   const [sheet, setSheet] = useState<{ entry: Entry | null; done: boolean } | null>(null);
   const [rates, setRates] = useState<Record<string, number> | null>(null);
@@ -29,7 +30,7 @@ export default function EntriesPanel({ trip, itemId, kind, onStatus, onCost }: {
 
   useEffect(() => {
     if (!es) return;
-    onStatus(entryStatus(def, es));
+    onStatus(entryStatus(def, es, range));
     if (def.costDone) onCost(entryCost(def, es));
   }, [es]);
 
@@ -79,6 +80,10 @@ export default function EntriesPanel({ trip, itemId, kind, onStatus, onCost }: {
         </div>
         <div className="stack" style={{ alignItems: 'flex-end', gap: 4 }}>
           {price != null && price > 0 && <b style={{ fontSize: 14 }}>{price.toLocaleString('ko-KR')}원</b>}
+          {e.data.link && (
+            <a className="link-chip" href={/^https?:\/\//.test(e.data.link) ? e.data.link : `https://${e.data.link}`} target="_blank" rel="noreferrer"
+              onClick={(ev) => ev.stopPropagation()}>링크 열기</a>
+          )}
           {!def.groups && (
             def.autoDone ? (
               <span className={`badge ${e.done ? 'done' : 'todo'}`}>{def.doneLabel[e.done ? 1 : 0]}</span>
@@ -149,6 +154,25 @@ export default function EntriesPanel({ trip, itemId, kind, onStatus, onCost }: {
           <div className="row between"><span className="row gap6" style={{ alignItems: 'center' }}><span className="chip-fix">확정</span><b style={{ fontSize: 15 }}>{def.groups.on}</b></span>
             {(entryCost(def, es) ?? 0) > 0 && <b style={{ fontSize: 15 }}>{entryCost(def, es)!.toLocaleString('ko-KR')}원</b>}</div>
           <p className="xs muted">{def.groups.onHint}</p>
+          {kind === 'lodging' && trip.start_date && trip.end_date && (() => {
+            const left = uncoveredNights(es, range);
+            const total = Math.round((Date.parse(trip.end_date) - Date.parse(trip.start_date)) / 864e5);
+            if (total <= 0) return null;
+            const md = (s: string) => `${Number(s.slice(5, 7))}/${Number(s.slice(8, 10))}`;
+            // 이어지는 날짜를 묶어서 보여준다
+            const spans: string[] = [];
+            let i = 0;
+            while (i < left.length) {
+              let j = i;
+              while (j + 1 < left.length && Date.parse(left[j + 1]) - Date.parse(left[j]) === 864e5) j++;
+              const endNext = new Date(Date.parse(left[j]) + 864e5).toISOString().slice(0, 10);
+              spans.push(`${md(left[i])}~${md(endNext)}`);
+              i = j + 1;
+            }
+            return left.length === 0
+              ? <div className="ok-box"><b>여행 {total}박 숙소를 모두 예약했어요</b></div>
+              : <div className="caution-box"><b>{total}박 중 {total - left.length}박 예약 · {left.length}박 남았어요</b><span>예약이 필요한 날: {spans.join(', ')}</span></div>;
+          })()}
           {on.map((e) => card(e, true))}
           <button className="add-dashed" onClick={() => setSheet({ entry: null, done: true })}>+ 예약한 숙소 추가</button>
         </section>

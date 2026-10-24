@@ -28,7 +28,8 @@ export default function EntrySheet({ def, entry, initialDone, cities, currencies
     const v = d[f.key] ?? '';
     switch (f.type) {
       case 'date':
-        return <input type="date" value={v} min={f.key === 'checkout' ? d.checkin : undefined} onChange={(e) => set(f.key, e.target.value)} />;
+        return <input type="date" value={v} min={f.key === 'checkout' ? d.checkin : f.key === 'arr_date' ? d.date : undefined}
+          onFocus={() => { if (f.key === 'arr_date' && !v && d.date) set(f.key, d.date); }} onChange={(e) => set(f.key, e.target.value)} />;
       case 'time':
         return <input inputMode="numeric" value={v} placeholder="00:00" maxLength={5} onChange={(e) => set(f.key, timeFmt(e.target.value))} />;
       case 'price':
@@ -56,7 +57,7 @@ export default function EntrySheet({ def, entry, initialDone, cities, currencies
                 {cities.map((c) => <button key={c} type="button" className={`pill ${v === c ? 'on' : ''}`} onClick={() => set(f.key, v === c ? '' : c)}>{c}</button>)}
               </div>
             )}
-            <input value={cities.includes(v) ? '' : v} placeholder={cities.length ? '목록에 없으면 직접 입력' : '도시 이름'} onChange={(e) => set(f.key, e.target.value)} />
+            <input value={cities.includes(v) ? '' : v} placeholder={cities.length ? `목록에 없으면 직접 입력${f.placeholder ? ` (${f.placeholder})` : ''}` : f.placeholder ?? '도시 이름'} onChange={(e) => set(f.key, e.target.value)} />
           </div>
         );
       default:
@@ -70,7 +71,10 @@ export default function EntrySheet({ def, entry, initialDone, cities, currencies
   };
 
   const save = async () => {
-    if (d.time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(d.time)) return setErr('시각은 24시간제로 적어주세요 (예: 14:30).');
+    const tOk = (t?: string) => !t || /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
+    if (!tOk(d.time) || !tOk(d.arr_time)) return setErr('시각은 24시간제로 적어주세요 (예: 14:30).');
+    if (d.arr_time && !d.arr_date && d.date) d.arr_date = d.date;
+    if (d.arr_date && d.date && (d.arr_date < d.date || (d.arr_date === d.date && d.arr_time && d.time && d.arr_time <= d.time))) return setErr('도착이 출발보다 빨라요. 날짜와 시각을 확인해 주세요.');
     if (d.date && trip.start && trip.end && (d.date < trip.start || d.date > trip.end)) return setErr('여행 기간 안의 날짜로 골라주세요.');
     if (d.checkin && d.checkout && d.checkout < d.checkin) return setErr('체크아웃이 체크인보다 빨라요.');
     setBusy(true);
@@ -110,6 +114,7 @@ export default function EntrySheet({ def, entry, initialDone, cities, currencies
               </div>
             ))}
           </div>
+          {def.extra?.(d) && <p className="small" style={{ fontWeight: 700, color: 'var(--brand-ink)' }}>{def.extra(d)}</p>}
           {def.autoDone && <p className="xs muted">날짜를 정하면 일정 탭의 그날에 자동으로 들어가요.</p>}
           {err && <p className="error" role="alert">{err}</p>}
           {entry && onDelete && (askDel ? (
