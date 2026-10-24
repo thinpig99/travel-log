@@ -101,7 +101,7 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
     if (!segs) return;
     const date = o.dep_date ?? '';
     const code = (o.airline.match(/^[A-Z0-9]{2}$/i) ? o.airline.toUpperCase() : '');
-    const fill = (s: Flight): Flight => ({ ...s, dep_airport: o.dep_airport, arr_airport: o.arr_airport, dep_date: date || s.dep_date, arr_date: date || s.arr_date, flight_no: s.flight_no || code });
+    const fill = (s: Flight): Flight => ({ ...s, dep_airport: o.dep_airport, arr_airport: o.arr_airport, dep_date: date || s.dep_date, arr_date: date || s.arr_date, dep_time: (o.dep_time ?? '').slice(0, 5) || s.dep_time, flight_no: s.flight_no || code });
     const idx = segs.findIndex((s) => !flightsComplete([s]));
     if (idx >= 0) setSegs(segs.map((s, i) => (i === idx ? fill(s) : s)));
     else if (mode === 'multi') setSegs([...segs, fill({ flight_no: '', dep_airport: '', dep_date: '', dep_time: '', arr_airport: '', arr_date: '', arr_time: '' })]);
@@ -173,10 +173,11 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
             placeholder={'준비하면서 챙길 것들을 자유롭게 적어요\n예: 예약번호 AB1234, 체크인 15시, 취소는 3일 전까지'} />
         </label>
 
-        {flightItem && <FlightOptions tripId={trip.id} start={start} currencies={currencies} onCount={onOptCount} onPick={pickOption} />}
+        {flightItem && <FlightOptions tripId={trip.id} onCount={onOptCount} onPick={pickOption} />}
         {flightItem && (
           <div id="confirmed-flights" className="stack gap8">
-            <b style={{ fontSize: 15 }}>확정 항공편</b>
+            <span className="row gap6" style={{ alignItems: 'center' }}><span className="chip-fix">확정</span><b style={{ fontSize: 15 }}>확정 항공편</b></span>
+            <p className="xs muted">예약을 마친 항공편이에요. 저장하면 일정 탭에 자동으로 들어가요.</p>
             {segs ? <FlightEditor mode={mode} segs={segs} start={start} end={end} onMode={setMode} onChange={setSegs} /> : <p className="small muted">항공편을 불러오는 중</p>}
           </div>
         )}

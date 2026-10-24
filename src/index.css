@@ -243,3 +243,13 @@ textarea.input.note-area { min-height: 220px; line-height: 1.6; }
 .auto-status { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-radius: 12px; background: #f4f6fb; }
 .seg-btn:disabled { cursor: default; color: var(--muted); opacity: 1; }
 .seg-btn.on:disabled.todo { color: var(--red-ink); } .seg-btn.on:disabled.doing { color: var(--warn-ink); } .seg-btn.on:disabled.done { color: var(--brand-ink); }
+.chip-cand, .chip-fix { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+.chip-cand { background: #fff; color: var(--ink-2); border: 1px dashed var(--line-2); }
+.chip-fix { background: var(--brand); color: #fff; }
+.cand-card { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 14px; background: #fff; border: 1.5px dashed var(--line-2); }
+.input.sm { height: 40px; font-size: 14px; padding: 0 10px; border-radius: 10px; }
+.cand-top { display: grid; grid-template-columns: 20px 62px 12px 62px minmax(0, 1fr); gap: 6px; align-items: center; }
+.cand-n { width: 20px; height: 20px; border-radius: 10px; background: var(--soft); color: var(--ink-2); font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.cand-row2 { display: grid; grid-template-columns: minmax(0, 1fr) 116px; gap: 6px; padding-left: 26px; }
+.cand-row3 { display: grid; grid-template-columns: 30px minmax(0, 1fr) 116px; gap: 6px; align-items: center; padding-left: 26px; }
+#confirmed-flights .flight-card { background: var(--brand-soft); border: 1px solid #c9d0f0; border-left: 4px solid var(--brand); }

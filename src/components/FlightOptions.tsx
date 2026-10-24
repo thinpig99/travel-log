@@ -1,121 +1,130 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { dayLabel, errorText, money } from '../lib/format';
-import { AIRLINES, CABINS, resolveAirline, type Cabin, type FlightOption } from '../lib/flights';
+import { CABINS, resolveAirline, type Cabin, type FlightOption } from '../lib/flights';
 import AirlineLogo from './AirlineLogo';
 
-const empty = (date: string) => ({ dep_airport: '', arr_airport: '', dep_date: date, airline: '', price: '', currency: 'KRW', cabin: 'economy' as Cabin, note: '' });
+let seq = 0;
+const key = () => `k${++seq}`;
+interface Draft { k: string; id?: string; dep_airport: string; arr_airport: string; dep_date: string; dep_time: string; airline: string; price: string; cabin: Cabin }
 
-/** 항공권 후보 목록. 추가와 삭제는 바로 저장된다 */
-export default function FlightOptions({ tripId, start, currencies, onCount, onPick }: {
-  tripId: string; start: string; currencies: string[];
-  onCount: (n: number) => void; onPick: (o: FlightOption) => void;
+const blank = (): Draft => ({ k: key(), dep_airport: '', arr_airport: '', dep_date: '', dep_time: '', airline: '', price: '', cabin: 'economy' });
+const filled = (d: Draft) => !!(d.dep_airport || d.arr_airport || d.dep_date || d.dep_time || d.airline || d.price);
+const toDraft = (o: FlightOption): Draft => ({
+  k: key(), id: o.id, dep_airport: o.dep_airport, arr_airport: o.arr_airport, dep_date: o.dep_date ?? '', dep_time: (o.dep_time ?? '').slice(0, 5),
+  airline: o.airline, price: o.price != null ? Number(o.price).toLocaleString('ko-KR') : '', cabin: o.cabin,
+});
+
+/** 항공권 후보: 기본 3칸, 적는 대로 자동 저장 */
+export default function FlightOptions({ tripId, onCount, onPick }: {
+  tripId: string; onCount: (n: number) => void; onPick: (o: FlightOption) => void;
 }) {
-  const [list, setList] = useState<FlightOption[]>([]);
-  const [adding, setAdding] = useState(false);
-  const [f, setF] = useState(empty(start));
-  const [err, setErr] = useState('');
+  const [rows, setRows] = useState<Draft[] | null>(null);
 
   useEffect(() => {
     supabase.from('flight_options').select('*').eq('trip_id', tripId).order('created_at').then(({ data }) => {
-      const l = (data as FlightOption[]) ?? [];
-      setList(l);
-      onCount(l.length);
+      const l = ((data as FlightOption[]) ?? []).map(toDraft);
+      setRows([...l, ...Array.from({ length: Math.max(0, 3 - l.length) }, blank)]);
     });
   }, [tripId]);
 
-  const add = async () => {
-    if (!f.dep_airport.trim() || !f.arr_airport.trim()) return setErr('출발 공항과 도착 공항을 적어주세요.');
-    const price = f.price ? Number(f.price.replace(/,/g, '')) : null;
-    const { data, error } = await supabase.from('flight_options').insert({
-      trip_id: tripId, dep_airport: f.dep_airport.trim().toUpperCase(), arr_airport: f.arr_airport.trim().toUpperCase(),
-      dep_date: f.dep_date || null, airline: f.airline.trim(), price, currency: f.currency, cabin: f.cabin, note: f.note.trim(),
-    }).select('*').single();
-    if (error) return setErr(errorText(error));
-    const l = [...list, data as FlightOption];
-    setList(l);
-    onCount(l.length);
-    setF(empty(f.dep_date));
-    setAdding(false);
-    setErr('');
-  };
+  const count = rows ? rows.filter((r) => r.id).length : null;
+  useEffect(() => { if (count != null) onCount(count); }, [count]);
+  if (!rows) return null;
+  const prices = rows.map((r) => Number(r.price.replace(/,/g, ''))).filter((n) => n > 0);
+  const min = prices.length > 1 ? Math.min(...prices) : null;
 
-  const remove = async (id: string) => {
-    const l = list.filter((o) => o.id !== id);
-    setList(l);
-    onCount(l.length);
-    await supabase.from('flight_options').delete().eq('id', id);
+  const setRow = (k: string, d: Draft) => setRows((rs) => rs!.map((r) => (r.k === k ? { ...d, k } : r)));
+  const removeRow = async (i: number) => {
+    const r = rows[i];
+    const next = rows.filter((_, j) => j !== i);
+    while (next.length < 3) next.push(blank());
+    setRows(next);
+    if (r.id) await supabase.from('flight_options').delete().eq('id', r.id);
   };
-
-  const curs = ['KRW', ...currencies.filter((c) => c !== 'KRW')];
-  const code = resolveAirline(f.airline);
-  const cheapest = list.reduce<number | null>((m, o) => (o.price != null && o.currency === 'KRW' && (m == null || o.price < m) ? o.price : m), null);
 
   return (
     <section className="stack gap8">
       <div className="row between">
-        <b style={{ fontSize: 15 }}>항공권 후보</b>
-        <span className="xs muted">{list.length ? `${list.length}개` : '비교할 항공편을 모아두세요'}</span>
+        <span className="row gap6" style={{ alignItems: 'center' }}><span className="chip-cand">후보</span><b style={{ fontSize: 15 }}>항공권 후보</b></span>
+        <span className="xs muted">{count ? `${count}개 비교 중` : '적는 대로 저장돼요'}</span>
       </div>
-
-      {list.map((o) => {
-        const c = resolveAirline(o.airline);
-        return (
-          <div key={o.id} className="opt-card">
-            <AirlineLogo flightNo={c ?? ''} size={36} />
-            <div className="stack grow" style={{ minWidth: 0, gap: 2 }}>
-              <b style={{ fontSize: 15 }}>{o.dep_airport} → {o.arr_airport}</b>
-              <span className="xs muted">
-                {[o.airline ? (c && AIRLINES[c] && o.airline.length <= 3 ? AIRLINES[c] : o.airline) : '', CABINS[o.cabin], o.dep_date ? dayLabel(o.dep_date) : ''].filter(Boolean).join(' · ')}
-              </span>
-              {o.note && <span className="xs muted ellipsis">{o.note}</span>}
-              <div className="row gap12" style={{ marginTop: 4 }}>
-                <button className="link-btn" style={{ fontSize: 12 }} onClick={() => onPick(o)}>확정 항공편에 넣기</button>
-                <button className="link-btn" style={{ fontSize: 12, color: 'var(--red-ink)' }} onClick={() => remove(o.id)}>지우기</button>
-              </div>
-            </div>
-            <div className="stack" style={{ alignItems: 'flex-end', gap: 2 }}>
-              <b style={{ fontSize: 15 }}>{o.price != null ? money(Number(o.price), o.currency) : '-'}</b>
-              {cheapest != null && o.price === cheapest && list.length > 1 && <span className="tl-now" style={{ marginLeft: 0 }}>최저가</span>}
-            </div>
-          </div>
-        );
-      })}
-
-      {adding ? (
-        <div className="flight-card">
-          <div className="opt-grid">
-            <input className="input" value={f.dep_airport} maxLength={4} placeholder="출발 ICN" aria-label="출발 공항" onChange={(e) => setF({ ...f, dep_airport: e.target.value.toUpperCase() })} />
-            <input className="input" value={f.arr_airport} maxLength={4} placeholder="도착 HND" aria-label="도착 공항" onChange={(e) => setF({ ...f, arr_airport: e.target.value.toUpperCase() })} />
-          </div>
-          <input className="input" type="date" value={f.dep_date} aria-label="출발 날짜" onChange={(e) => setF({ ...f, dep_date: e.target.value })} />
-          <div className="flight-no">
-            <AirlineLogo flightNo={code ?? ''} size={36} />
-            <input className="input" value={f.airline} placeholder="항공사 (예: KE 또는 대한항공)" aria-label="항공사" onChange={(e) => setF({ ...f, airline: e.target.value })} />
-          </div>
-          <div className="seg" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }} role="radiogroup" aria-label="좌석 등급">
-            {(Object.keys(CABINS) as Cabin[]).map((k) => (
-              <button key={k} role="radio" aria-checked={f.cabin === k} className={`seg-btn ${f.cabin === k ? 'on done' : ''}`} style={{ fontSize: 12, padding: 0 }}
-                onClick={() => setF({ ...f, cabin: k })}>{k === 'premium' ? '프리미엄' : CABINS[k]}</button>
-            ))}
-          </div>
-          <div className="cost-row">
-            <select className="input" value={f.currency} onChange={(e) => setF({ ...f, currency: e.target.value })} aria-label="화폐">
-              {curs.map((x) => <option key={x} value={x}>{x === 'KRW' ? '원' : x}</option>)}
-            </select>
-            <input className="input" inputMode="decimal" value={f.price} placeholder="가격 (예: 420,000)" aria-label="가격"
-              onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); setF({ ...f, price: v ? Number(v).toLocaleString('ko-KR') : '' }); }} />
-          </div>
-          <input className="input" value={f.note} placeholder="메모 (예: 수하물 포함, 오전 출발)" aria-label="메모" onChange={(e) => setF({ ...f, note: e.target.value })} />
-          {err && <p className="error" role="alert">{err}</p>}
-          <div className="row gap8">
-            <button className="btn secondary small" onClick={() => { setAdding(false); setErr(''); }}>취소</button>
-            <button className="btn small grow" onClick={add}>후보 추가</button>
-          </div>
-        </div>
-      ) : (
-        <button className="btn secondary block" onClick={() => setAdding(true)}>+ 후보 추가</button>
-      )}
+      {rows.map((r, i) => (
+        <OptionRow key={r.k} tripId={tripId} n={i + 1} draft={r} cheapest={min != null && Number(r.price.replace(/,/g, '')) === min}
+          onChange={(d) => setRow(r.k, d)} onSaved={(id) => setRows((rs) => rs!.map((x) => (x.k === r.k ? { ...x, id } : x)))}
+          onRemove={() => removeRow(i)} onPick={onPick} />
+      ))}
+      <button className="link-btn" style={{ alignSelf: 'flex-start' }} onClick={() => setRows([...rows, blank()])}>+ 후보 추가</button>
     </section>
+  );
+}
+
+function OptionRow({ tripId, n, draft, cheapest, onChange, onSaved, onRemove, onPick }: {
+  tripId: string; n: number; draft: Draft; cheapest: boolean;
+  onChange: (d: Draft) => void; onSaved: (id: string) => void; onRemove: () => void; onPick: (o: FlightOption) => void;
+}) {
+  const [d, setD] = useState(draft);
+  const idRef = useRef(draft.id);
+  const timer = useRef<number | undefined>(undefined);
+  const busy = useRef<Promise<unknown>>(Promise.resolve());
+
+  const payload = (x: Draft) => ({
+    trip_id: tripId, dep_airport: x.dep_airport.trim().toUpperCase(), arr_airport: x.arr_airport.trim().toUpperCase(),
+    dep_date: x.dep_date || null, dep_time: x.dep_time || null, airline: x.airline.trim(),
+    price: x.price ? Number(x.price.replace(/,/g, '')) : null, currency: 'KRW', cabin: x.cabin,
+  });
+
+  const persist = (x: Draft) => {
+    busy.current = busy.current.then(async () => {
+      if (!filled(x) && !idRef.current) return;
+      if (idRef.current) await supabase.from('flight_options').update(payload(x)).eq('id', idRef.current);
+      else {
+        const { data } = await supabase.from('flight_options').insert(payload(x)).select('id').single();
+        if (data?.id) { idRef.current = data.id; onSaved(data.id); }
+      }
+    });
+  };
+
+  const change = (p: Partial<Draft>) => {
+    const x = { ...d, ...p };
+    setD(x);
+    onChange({ ...x, id: idRef.current });
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => persist(x), 600);
+  };
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  const code = resolveAirline(d.airline);
+  return (
+    <div className="cand-card">
+      <div className="cand-top">
+        <span className="cand-n">{n}</span>
+        <input className="input sm" value={d.dep_airport} maxLength={4} placeholder="ICN" aria-label={`후보 ${n} 출발 공항`} onChange={(e) => change({ dep_airport: e.target.value.toUpperCase() })} />
+        <span className="muted" aria-hidden="true">→</span>
+        <input className="input sm" value={d.arr_airport} maxLength={4} placeholder="HND" aria-label={`후보 ${n} 도착 공항`} onChange={(e) => change({ arr_airport: e.target.value.toUpperCase() })} />
+        <select className="input sm" value={d.cabin} aria-label={`후보 ${n} 좌석 등급`} onChange={(e) => change({ cabin: e.target.value as Cabin })}>
+          {(Object.keys(CABINS) as Cabin[]).map((k) => <option key={k} value={k}>{CABINS[k]}</option>)}
+        </select>
+      </div>
+      <div className="cand-row2">
+        <input className="input sm" type="date" value={d.dep_date} aria-label={`후보 ${n} 출발 날짜`} onChange={(e) => change({ dep_date: e.target.value })} />
+        <input className="input sm" type="time" value={d.dep_time} aria-label={`후보 ${n} 출발 시간`} onChange={(e) => change({ dep_time: e.target.value })} />
+      </div>
+      <div className="cand-row3">
+        <AirlineLogo flightNo={code ?? ''} size={30} />
+        <input className="input sm" value={d.airline} placeholder="항공사 (KE, 대한항공)" aria-label={`후보 ${n} 항공사`} onChange={(e) => change({ airline: e.target.value })} />
+        <input className="input sm" inputMode="numeric" value={d.price} placeholder="가격 (원)" aria-label={`후보 ${n} 가격`}
+          onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); change({ price: v ? Number(v).toLocaleString('ko-KR') : '' }); }} />
+      </div>
+      {filled(d) && (
+        <div className="row gap12" style={{ alignItems: 'center' }}>
+          {cheapest && <span className="tl-now" style={{ marginLeft: 0 }}>최저가</span>}
+          <button className="link-btn" style={{ fontSize: 12 }}
+            onClick={() => onPick({ id: idRef.current ?? "", ...payload(d), price: payload(d).price, cabin: d.cabin, note: '' } as FlightOption)}>
+            확정 항공편에 넣기
+          </button>
+          <button className="link-btn" style={{ fontSize: 12, color: 'var(--red-ink)', marginLeft: 'auto' }} onClick={onRemove}>지우기</button>
+        </div>
+      )}
+    </div>
   );
 }

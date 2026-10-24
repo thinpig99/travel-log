@@ -60,7 +60,7 @@ export const flightsTouched = (segs: Flight[]) => segs.some((s) => s.flight_no |
 export type Cabin = 'economy' | 'premium' | 'business' | 'first';
 export const CABINS: Record<Cabin, string> = { economy: '이코노미', premium: '프리미엄 이코노미', business: '비즈니스', first: '퍼스트' };
 export interface FlightOption {
-  id: string; trip_id: string; dep_airport: string; arr_airport: string; dep_date: string | null;
+  id: string; trip_id: string; dep_airport: string; arr_airport: string; dep_date: string | null; dep_time?: string | null;
   airline: string; price: number | null; currency: string; cabin: Cabin; note: string;
 }
 
