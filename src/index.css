@@ -238,3 +238,8 @@ textarea.input.note-area { min-height: 220px; line-height: 1.6; }
 .air-logo { border-radius: 8px; background: #fff; object-fit: contain; box-shadow: 0 0 0 1px var(--line); display: inline-grid; place-items: center; flex: none; }
 .air-logo.code { font-weight: 800; color: var(--brand-ink); background: var(--brand-soft); }
 .air-logo.empty { background: #fff; }
+.opt-card { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.opt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.auto-status { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-radius: 12px; background: #f4f6fb; }
+.seg-btn:disabled { cursor: default; color: var(--muted); opacity: 1; }
+.seg-btn.on:disabled.todo { color: var(--red-ink); } .seg-btn.on:disabled.doing { color: var(--warn-ink); } .seg-btn.on:disabled.done { color: var(--brand-ink); }

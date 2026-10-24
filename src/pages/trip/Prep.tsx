@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { costLabel, parseDate, todayStr } from '../../lib/format';
+import { fetchFlights, flightsComplete, flightsTouched, isFlightItem } from '../../lib/flights';
 import { checkPassport, fetchPassport, isPassportItem, loadRules, type PassportState } from '../../lib/passport';
 import { NEXT_STATUS, STAGES, STAGE_WHEN, STATUS_LABEL, type PrepItem, type Trip } from '../../lib/types';
 
@@ -30,6 +31,15 @@ export default function Prep({ trip, items, setItems }: Props) {
       const want = state === 'ok' || state === 'domestic' ? 'done' : 'todo';
       items.filter((i) => isPassportItem(i) && i.status !== want).forEach((i) => patch(i.id, { status: want }));
     });
+    // 항공권 항목은 후보와 확정 항공편으로 자동 판단
+    const fi = items.filter(isFlightItem);
+    if (fi.length) {
+      Promise.all([fetchFlights(trip.id), supabase.from('flight_options').select('id', { count: 'exact', head: true }).eq('trip_id', trip.id)]).then(([segs, opts]) => {
+        if (!alive) return;
+        const want = flightsComplete(segs) ? 'done' : (opts.count ?? 0) > 0 || flightsTouched(segs) ? 'doing' : 'todo';
+        fi.filter((i) => i.status !== want).forEach((i) => patch(i.id, { status: want }));
+      });
+    }
     return () => { alive = false; };
   }, [trip.id, countries.join(), trip.end_date, items.length]);
 
@@ -94,7 +104,7 @@ export default function Prep({ trip, items, setItems }: Props) {
                   {isPassportItem(i) && pState && <span className={`xs pass-hint ${pState}`}>{PASS_HINT[pState]}</span>}
                   {i.note && <span className="xs muted ellipsis">{i.note.split('\n')[0]}</span>}
                 </div>
-                {isPassportItem(i) ? (
+                {isPassportItem(i) || isFlightItem(i) ? (
                   <span className={`badge ${i.status}`} title="여권 정보로 자동으로 바뀌어요">{STATUS_LABEL[i.status]}</span>
                 ) : (
                 <button

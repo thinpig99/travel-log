@@ -35,7 +35,7 @@ export const isFlightItem = (i: { stage: number; title: string }) => i.stage ===
 
 /** 편명 앞 두 글자(IATA 항공사 코드) */
 export const airlineCode = (flightNo: string) => {
-  const m = flightNo.toUpperCase().replace(/\s/g, '').match(/^([A-Z0-9]{2})(?=\d)/);
+  const m = flightNo.toUpperCase().replace(/\s/g, '').match(/^([A-Z0-9]{2})(?=\d|$)/);
   return m && /[A-Z]/.test(m[1]) ? m[1] : null;
 };
 
@@ -50,4 +50,26 @@ export const AIRLINES: Record<string, string> = {
   AF: '에어프랑스', KL: 'KLM', LH: '루프트한자', BA: '영국항공', LX: '스위스항공', AY: '핀에어', AZ: 'ITA항공', LO: 'LOT 폴란드항공',
   DL: '델타항공', UA: '유나이티드항공', AA: '아메리칸항공', HA: '하와이안항공', AS: '알래스카항공', AC: '에어캐나다',
   QF: '콴타스항공', NZ: '에어뉴질랜드', OM: '몽골항공', MR: '훈누에어', HU: '하이난항공',
+};
+
+/** 항공권 확정 여부: 모든 구간에 편명, 출발/도착 공항, 출발 날짜가 있음 */
+export const flightsComplete = (segs: Flight[]) =>
+  segs.length > 0 && segs.every((s) => s.flight_no && s.dep_airport && s.arr_airport && s.dep_date);
+export const flightsTouched = (segs: Flight[]) => segs.some((s) => s.flight_no || s.dep_airport || s.arr_airport || s.dep_time || s.arr_time);
+
+export type Cabin = 'economy' | 'premium' | 'business' | 'first';
+export const CABINS: Record<Cabin, string> = { economy: '이코노미', premium: '프리미엄 이코노미', business: '비즈니스', first: '퍼스트' };
+export interface FlightOption {
+  id: string; trip_id: string; dep_airport: string; arr_airport: string; dep_date: string | null;
+  airline: string; price: number | null; currency: string; cabin: Cabin; note: string;
+}
+
+/** "KE", "KE703", "대한항공" 같은 입력에서 항공사 코드를 찾는다 */
+export const resolveAirline = (text: string) => {
+  const t = text.trim();
+  const code = airlineCode(t);
+  if (code) return code;
+  if (!t) return null;
+  const hit = Object.entries(AIRLINES).find(([, name]) => name === t || name.replace('항공', '') === t.replace('항공', ''));
+  return hit ? hit[0] : null;
 };

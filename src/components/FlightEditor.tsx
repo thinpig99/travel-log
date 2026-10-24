@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import type { Flight, FlightMode } from '../lib/flights';
-import { AIRLINES, airlineCode, emptyFlight } from '../lib/flights';
+import { AIRLINES, airlineCode, emptyFlight, flightsTouched } from '../lib/flights';
 import AirlineLogo from './AirlineLogo';
 
 const MODES: [FlightMode, string][] = [['round', '왕복'], ['oneway', '편도'], ['multi', '다구간']];
@@ -15,6 +16,15 @@ export default function FlightEditor({ mode, segs, start, end, onMode, onChange 
   mode: FlightMode; segs: Flight[]; start: string; end: string;
   onMode: (m: FlightMode) => void; onChange: (s: Flight[]) => void;
 }) {
+  const [pending, setPending] = useState<{ mode: FlightMode; lost: number } | null>(null);
+  const apply = (m: FlightMode) => { onMode(m); onChange(fitSegments(m, segs, start, end)); setPending(null); };
+  const pick = (m: FlightMode) => {
+    if (m === mode) return;
+    const next = fitSegments(m, segs, start, end);
+    const lost = segs.slice(next.length).filter((s) => flightsTouched([s])).length;
+    if (lost) setPending({ mode: m, lost });
+    else apply(m);
+  };
   const set = (i: number, p: Partial<Flight>) => onChange(segs.map((s, j) => (j === i ? { ...s, ...p } : s)));
   const label = (i: number) => (mode === 'round' ? (i === 0 ? '가는 편' : '오는 편') : mode === 'oneway' ? '항공편' : `구간 ${i + 1}`);
 
@@ -23,9 +33,19 @@ export default function FlightEditor({ mode, segs, start, end, onMode, onChange 
       <div className="seg" role="radiogroup" aria-label="여정 종류">
         {MODES.map(([m, l]) => (
           <button key={m} role="radio" aria-checked={mode === m} className={`seg-btn ${mode === m ? 'on done' : ''}`}
-            onClick={() => { onMode(m); onChange(fitSegments(m, segs, start, end)); }}>{l}</button>
+            onClick={() => pick(m)}>{l}</button>
         ))}
       </div>
+      {pending && (
+        <div className="warn-box" role="alert">
+          <b>{{ round: '왕복으로', oneway: '편도로', multi: '다구간으로' }[pending.mode]} 바꾸면 입력한 항공편 {pending.lost}개가 지워져요</b>
+          <span>{pending.mode === 'oneway' ? '첫 번째 항공편만 남아요.' : '앞의 두 항공편만 남아요.'} 저장하기 전까지는 되돌릴 수 있어요.</span>
+          <div className="row gap8" style={{ marginTop: 6 }}>
+            <button className="btn secondary small" onClick={() => setPending(null)}>그대로 두기</button>
+            <button className="btn danger small" onClick={() => apply(pending.mode)}>바꾸기</button>
+          </div>
+        </div>
+      )}
 
       {segs.map((s, i) => {
         const code = airlineCode(s.flight_no);

@@ -11,7 +11,8 @@ import VisaInfo, { isVisaItem } from '../components/VisaInfo';
 import ArrivalInfo from '../components/ArrivalInfo';
 import { isArrivalItem } from '../lib/entry';
 import FlightEditor, { fitSegments } from '../components/FlightEditor';
-import { fetchFlights, isFlightItem, saveFlights, type Flight, type FlightMode } from '../lib/flights';
+import { fetchFlights, flightsComplete, flightsTouched, isFlightItem, saveFlights, type Flight, type FlightMode, type FlightOption } from '../lib/flights';
+import FlightOptions from '../components/FlightOptions';
 import { isPassportItem } from '../lib/passport';
 
 export default function PrepDetail() {
@@ -82,6 +83,33 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
     fetchFlights(trip.id).then((f) => setSegs(fitSegments((trip.flight_mode as FlightMode) ?? 'round', f, start, end)));
   }, [trip.id]);
 
+  const [optCount, setOptCount] = useState<number | null>(null);
+  const autoStatus: PrepStatus | null = flightItem && segs && optCount != null
+    ? flightsComplete(segs) ? 'done' : optCount > 0 || flightsTouched(segs) ? 'doing' : 'todo'
+    : null;
+  const shownStatus = autoStatus ?? status;
+  const onOptCount = (n: number) => {
+    setOptCount((prev) => {
+      if (prev != null && segs && !flightsComplete(segs)) {
+        const s: PrepStatus = n > 0 || flightsTouched(segs) ? 'doing' : 'todo';
+        supabase.from('prep_items').update({ status: s }).eq('id', item.id).then(() => {});
+      }
+      return n;
+    });
+  };
+  const pickOption = (o: FlightOption) => {
+    if (!segs) return;
+    const date = o.dep_date ?? '';
+    const code = (o.airline.match(/^[A-Z0-9]{2}$/i) ? o.airline.toUpperCase() : '');
+    const fill = (s: Flight): Flight => ({ ...s, dep_airport: o.dep_airport, arr_airport: o.arr_airport, dep_date: date || s.dep_date, arr_date: date || s.arr_date, flight_no: s.flight_no || code });
+    const idx = segs.findIndex((s) => !flightsComplete([s]));
+    if (idx >= 0) setSegs(segs.map((s, i) => (i === idx ? fill(s) : s)));
+    else if (mode === 'multi') setSegs([...segs, fill({ flight_no: '', dep_airport: '', dep_date: '', dep_time: '', arr_airport: '', arr_date: '', arr_time: '' })]);
+    else return setErr('확정 항공편이 모두 채워져 있어요. 바꿀 항공편의 내용을 먼저 지워주세요.');
+    setErr('');
+    document.getElementById('confirmed-flights')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const save = async () => {
     if (!title.trim()) return setErr('항목 이름을 적어주세요.');
     if (flightItem && segs) {
@@ -94,7 +122,7 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
     const v = c.value();
     if (!v) return setErr('환율을 불러오는 중이에요. 잠시 후 다시 눌러주세요.');
     setBusy(true);
-    const { error } = await supabase.from('prep_items').update({ title: title.trim(), note: note.trim(), status, ...v }).eq('id', item.id);
+    const { error } = await supabase.from('prep_items').update({ title: title.trim(), note: note.trim(), status: shownStatus, ...v }).eq('id', item.id);
     setBusy(false);
     if (error) return setErr(errorText(error));
     onBack();
@@ -120,17 +148,18 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
 
         {isVisaItem(item) && <VisaInfo trip={trip} />}
         {isArrivalItem(item) && <ArrivalInfo trip={trip} />}
-        {flightItem && (segs ? <FlightEditor mode={mode} segs={segs} start={start} end={end} onMode={setMode} onChange={setSegs} /> : <p className="small muted">항공편을 불러오는 중</p>)}
 
         <div className="field">
           <span>진행 상태</span>
           <div className="seg" role="radiogroup" aria-label="진행 상태">
             {(['todo', 'doing', 'done'] as PrepStatus[]).map((s) => (
-              <button key={s} role="radio" aria-checked={status === s} className={`seg-btn ${s} ${status === s ? 'on' : ''}`} onClick={() => setStatusNow(s)}>
+              <button key={s} role="radio" aria-checked={shownStatus === s} className={`seg-btn ${s} ${shownStatus === s ? 'on' : ''}`}
+                disabled={flightItem} onClick={() => setStatusNow(s)}>
                 {STATUS_LABEL[s]}
               </button>
             ))}
           </div>
+          {flightItem && <p className="xs muted">후보를 넣으면 진행 중, 확정 항공편을 모두 채우면 완료로 자동으로 바뀌어요.</p>}
         </div>
 
         <div className="field">
@@ -143,6 +172,14 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
           <textarea className="input note-area" value={note} onChange={(e) => setNote(e.target.value)}
             placeholder={'준비하면서 챙길 것들을 자유롭게 적어요\n예: 예약번호 AB1234, 체크인 15시, 취소는 3일 전까지'} />
         </label>
+
+        {flightItem && <FlightOptions tripId={trip.id} start={start} currencies={currencies} onCount={onOptCount} onPick={pickOption} />}
+        {flightItem && (
+          <div id="confirmed-flights" className="stack gap8">
+            <b style={{ fontSize: 15 }}>확정 항공편</b>
+            {segs ? <FlightEditor mode={mode} segs={segs} start={start} end={end} onMode={setMode} onChange={setSegs} /> : <p className="small muted">항공편을 불러오는 중</p>}
+          </div>
+        )}
 
         {err && <p className="error" role="alert">{err}</p>}
 
