@@ -75,6 +75,7 @@ export interface Trip {
   visibility: 'private' | 'group' | 'public';
   group_id: string | null;
   created_at: string;
+  flight_mode?: string;
   trip_cities?: { sort: number; arrive?: string | null; depart?: string | null; note?: string; cities: CityRef }[];
   prep_items?: { status: PrepStatus; cost: number | null }[];
 }
@@ -104,6 +105,7 @@ export interface ScheduleItem {
   note: string;
   currency?: string;
   amount?: number | null;
+  flight_id?: string | null;
 }
 
 export interface Profile {

@@ -10,6 +10,8 @@ import PassportCheck from '../components/PassportCheck';
 import VisaInfo, { isVisaItem } from '../components/VisaInfo';
 import ArrivalInfo from '../components/ArrivalInfo';
 import { isArrivalItem } from '../lib/entry';
+import FlightEditor, { fitSegments } from '../components/FlightEditor';
+import { fetchFlights, isFlightItem, saveFlights, type Flight, type FlightMode } from '../lib/flights';
 import { isPassportItem } from '../lib/passport';
 
 export default function PrepDetail() {
@@ -70,8 +72,25 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
     if (error) setErr(errorText(error));
   };
 
+  const flightItem = isFlightItem(item);
+  const start = trip.start_date ?? '';
+  const end = trip.end_date ?? '';
+  const [mode, setMode] = useState<FlightMode>((trip.flight_mode as FlightMode) ?? 'round');
+  const [segs, setSegs] = useState<Flight[] | null>(flightItem ? null : []);
+  useEffect(() => {
+    if (!flightItem) return;
+    fetchFlights(trip.id).then((f) => setSegs(fitSegments((trip.flight_mode as FlightMode) ?? 'round', f, start, end)));
+  }, [trip.id]);
+
   const save = async () => {
     if (!title.trim()) return setErr('항목 이름을 적어주세요.');
+    if (flightItem && segs) {
+      const bad = segs.find((s) => s.arr_date && s.dep_date && s.arr_date < s.dep_date);
+      if (bad) return setErr('도착 날짜가 출발 날짜보다 빨라요.');
+      const filled = segs.filter((s) => s.flight_no || s.dep_airport || s.arr_airport || s.dep_time);
+      const { error: fe } = await saveFlights(trip.id, mode, filled);
+      if (fe) return setErr(errorText(fe));
+    }
     const v = c.value();
     if (!v) return setErr('환율을 불러오는 중이에요. 잠시 후 다시 눌러주세요.');
     setBusy(true);
@@ -101,6 +120,7 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
 
         {isVisaItem(item) && <VisaInfo trip={trip} />}
         {isArrivalItem(item) && <ArrivalInfo trip={trip} />}
+        {flightItem && (segs ? <FlightEditor mode={mode} segs={segs} start={start} end={end} onMode={setMode} onChange={setSegs} /> : <p className="small muted">항공편을 불러오는 중</p>)}
 
         <div className="field">
           <span>진행 상태</span>

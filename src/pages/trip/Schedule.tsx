@@ -4,6 +4,7 @@ import { costLabel, dayLabel, daysBetween, todayStr, won } from '../../lib/forma
 import { CostInput, useCost, useTripCurrencies } from '../../components/CostInput';
 import { CATEGORIES, catStyle, type ScheduleItem, type Trip } from '../../lib/types';
 import { cityLabel } from '../../lib/geo';
+import AirlineLogo from '../../components/AirlineLogo';
 
 interface Props {
   trip: Trip;
@@ -67,12 +68,14 @@ export default function Schedule({ trip, items, setItems }: Props) {
             <div className="sched" style={{ cursor: 'pointer' }} onClick={() => setOpen(open === i.id ? null : i.id)}>
               <span className="small muted">{i.time ? i.time.slice(0, 5) : '-'}</span>
               <span className="stack gap4" style={{ minWidth: 0 }}>
-                <span style={{ fontSize: 15 }}>{i.title}</span>
+                <span className="row gap6" style={{ fontSize: 15, alignItems: 'center' }}>{i.flight_id && <AirlineLogo flightNo={i.title.split(' ')[0]} size={20} />}{i.title}</span>
+                {i.flight_id && i.note && <span className="xs muted">{i.note}</span>}
                 <span className="row gap6"><span className="cat" style={catStyle(i.category)}>{i.category}</span>{i.area && <span className="xs muted">{i.area}</span>}</span>
               </span>
               <span className="small muted" style={{ textAlign: 'right' }}>{costLabel(i)}</span>
             </div>
-            {open === i.id && <SchedForm ctx={ctx} item={i} onSave={(p) => update(i.id, p)} onRemove={() => remove(i.id)} onCancel={() => setOpen(null)} />}
+            {open === i.id && i.flight_id && <p className="notice small" style={{ marginTop: 8 }}>항공편 일정은 준비 탭의 항공권에서 고칠 수 있어요.</p>}
+            {open === i.id && !i.flight_id && <SchedForm ctx={ctx} item={i} onSave={(p) => update(i.id, p)} onRemove={() => remove(i.id)} onCancel={() => setOpen(null)} />}
           </div>
         ))}
         {adding ? (

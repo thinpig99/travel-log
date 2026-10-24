@@ -229,3 +229,12 @@ textarea.input.note-area { min-height: 220px; line-height: 1.6; }
 .tl-when { font-size: 11px; color: var(--muted); font-weight: 500; margin-left: 6px; }
 .tl-now { font-size: 11px; font-weight: 700; color: #fff; background: var(--gold); border-radius: 8px; padding: 1px 7px; margin-left: 6px; }
 .tl-title { display: flex; align-items: center; flex-wrap: wrap; min-width: 0; }
+.flight-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 16px; background: #f4f6fb; border: 1px solid var(--line); }
+.flight-no { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; align-items: center; }
+.flight-leg { display: grid; grid-template-columns: 32px 76px minmax(0, 1fr); gap: 6px; align-items: center; }
+.flight-leg .leg-date { grid-column: 2 / span 2; }
+.flight-leg .input { padding: 0 8px; font-size: 15px; }
+.leg-label { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.air-logo { border-radius: 8px; background: #fff; object-fit: contain; box-shadow: 0 0 0 1px var(--line); display: inline-grid; place-items: center; flex: none; }
+.air-logo.code { font-weight: 800; color: var(--brand-ink); background: var(--brand-soft); }
+.air-logo.empty { background: #fff; }
