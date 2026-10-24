@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { costLabel } from '../../lib/format';
-import { checkPassport, fetchPassport, isPassportItem, type PassportState } from '../../lib/passport';
+import { checkPassport, fetchPassport, isPassportItem, loadRules, type PassportState } from '../../lib/passport';
 import { NEXT_STATUS, STAGES, STATUS_LABEL, type PrepItem, type Trip } from '../../lib/types';
 
 interface Props {
@@ -23,9 +23,9 @@ export default function Prep({ trip, items, setItems }: Props) {
   // 여권 항목은 내 여권 정보로 자동 판단
   useEffect(() => {
     let alive = true;
-    fetchPassport().then((p) => {
+    Promise.all([fetchPassport(), loadRules()]).then(([p, rules]) => {
       if (!alive) return;
-      const { state } = checkPassport(p, countries, trip.end_date);
+      const { state } = checkPassport(p, countries, trip.end_date, rules);
       setPState(state);
       const want = state === 'ok' || state === 'domestic' ? 'done' : 'todo';
       items.filter((i) => isPassportItem(i) && i.status !== want).forEach((i) => patch(i.id, { status: want }));

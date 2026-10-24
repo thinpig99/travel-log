@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { parseDate } from '../lib/format';
 import { loadCountries } from '../lib/geo';
-import { checkPassport, fetchPassport, type Passport } from '../lib/passport';
+import { checkPassport, fetchPassport, loadRules, type Passport, type Rules } from '../lib/passport';
 import type { Trip } from '../lib/types';
 import { remaining } from './PassportCard';
 
@@ -11,15 +11,17 @@ const fmt = (s: string) => { const d = parseDate(s); return `${d.getFullYear()}.
 export default function PassportCheck({ trip }: { trip: Trip }) {
   const [p, setP] = useState<Passport | null | undefined>(undefined);
   const [names, setNames] = useState<Record<string, string>>({});
+  const [rules, setRules] = useState<Rules | null>(null);
   const countries = (trip.trip_cities ?? []).map((x) => x.cities.country_code);
 
   useEffect(() => {
     fetchPassport().then(setP);
+    loadRules().then(setRules);
     loadCountries().then((m) => setNames(Object.fromEntries(Object.keys(m).map((k) => [k, m[k][0]]))));
   }, []);
 
-  if (p === undefined) return <p className="muted small">여권 정보를 확인하는 중</p>;
-  const { state, checks, need } = checkPassport(p, countries, trip.end_date);
+  if (p === undefined || !rules) return <p className="muted small">여권 정보를 확인하는 중</p>;
+  const { state, checks, need } = checkPassport(p, countries, trip.end_date, rules);
 
   return (
     <div className="stack gap16">
@@ -62,6 +64,7 @@ export default function PassportCheck({ trip }: { trip: Trip }) {
                   {!c.known ? ' (정보가 없어 일반 기준으로 안내해요)' : ''}
                 </span>
                 {c.note && <span className="xs muted">{c.note}</span>}
+                {c.checked_on && <span className="xs muted">기준 확인일 {fmt(c.checked_on)}</span>}
               </span>
               {p?.expires && <span className={`badge ${c.ok ? 'done' : 'todo'}`}>{c.ok ? '충족' : '부족'}</span>}
             </div>
@@ -70,7 +73,9 @@ export default function PassportCheck({ trip }: { trip: Trip }) {
       )}
 
       <p className="xs muted">
-        상태는 여권 정보로 자동으로 바뀌어요. 나라별 기준은 바뀔 수 있으니 출국 전에 외교부 해외안전여행 사이트나 항공사에서 한 번 더 확인해 주세요.
+        상태는 여권 정보로 자동으로 바뀌어요. 나라별 기준은 매달 점검하지만 바뀔 수 있으니, 출국 전에{' '}
+        <a href="https://www.0404.go.kr" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-ink)', textDecoration: 'underline' }}>외교부 해외안전여행</a>
+        {' '}사이트나 항공사에서 한 번 더 확인해 주세요.
       </p>
     </div>
   );
