@@ -74,6 +74,7 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
 
   const flightItem = isFlightItem(item);
   const [autoStatus, setAutoStatus] = useState<PrepStatus | null>(null);
+  const [flightCost, setFlightCost] = useState<number | null>(item.cost);
   const shownStatus = autoStatus ?? status;
   const onFlightStatus = (st: PrepStatus) => {
     setAutoStatus(st);
@@ -106,12 +107,24 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
       <main className="page" style={{ paddingTop: 4 }}>
         <div className="stack gap8">
           <span className="small muted">{item.stage}단계 · {STAGES[item.stage]}</span>
-          <input className="title-input" value={title} maxLength={40} onChange={(e) => setTitle(e.target.value)} aria-label="항목 이름" placeholder="항목 이름 (예: 항공권 예매)" />
+          {flightItem ? (
+            <div className="row between" style={{ alignItems: 'center' }}>
+              <h1 className="title">{item.title}</h1>
+              <span className={`badge ${shownStatus}`}>{STATUS_LABEL[shownStatus]}</span>
+            </div>
+          ) : (
+            <input className="title-input" value={title} maxLength={40} onChange={(e) => setTitle(e.target.value)} aria-label="항목 이름" placeholder="항목 이름 (예: 항공권 예매)" />
+          )}
+          {flightItem && <span className="xs muted">후보를 넣으면 진행 중, 확정 항공편을 넣으면 완료로 자동으로 바뀌어요.</span>}
         </div>
 
         {isVisaItem(item) && <VisaInfo trip={trip} />}
         {isArrivalItem(item) && <ArrivalInfo trip={trip} />}
 
+        {flightItem && <FlightsPanel trip={trip} itemId={item.id} cost={flightCost} onStatus={onFlightStatus} onCost={setFlightCost} />}
+        {flightItem && <NoteBlock itemId={item.id} note={note} onSaved={setNote} />}
+
+        {!flightItem && (<>
         <div className="field">
           <span>진행 상태</span>
           <div className="seg" role="radiogroup" aria-label="진행 상태">
@@ -122,7 +135,6 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
               </button>
             ))}
           </div>
-          {flightItem && <p className="xs muted">후보를 넣으면 진행 중, 확정 항공편을 모두 채우면 완료로 자동으로 바뀌어요.</p>}
         </div>
 
         <div className="field">
@@ -135,8 +147,7 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
           <textarea className="input note-area" value={note} onChange={(e) => setNote(e.target.value)}
             placeholder={'준비하면서 챙길 것들을 자유롭게 적어요\n예: 예약번호 AB1234, 체크인 15시, 취소는 3일 전까지'} />
         </label>
-
-        {flightItem && <FlightsPanel trip={trip} onStatus={onFlightStatus} />}
+        </>)}
 
         {err && <p className="error" role="alert">{err}</p>}
 
@@ -152,9 +163,54 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
           </div>
         )}
       </main>
-      <div className="bottom-bar">
-        <button className="btn grow" disabled={busy} onClick={save}>저장</button>
-      </div>
+      {!flightItem && (
+        <div className="bottom-bar">
+          <button className="btn grow" disabled={busy} onClick={save}>저장</button>
+        </div>
+      )}
     </div>
+  );
+}
+
+/** 메모: 평소에는 보기만, 누르면 시트에서 고친다 */
+function NoteBlock({ itemId, note, onSaved }: { itemId: string; note: string; onSaved: (s: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState(note);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
+  const save = async () => {
+    setBusy(true);
+    const { error } = await supabase.from('prep_items').update({ note: text.trim() }).eq('id', itemId);
+    setBusy(false);
+    if (error) return setErr(errorText(error));
+    onSaved(text.trim());
+    setOpen(false);
+  };
+  return (
+    <section className="stack gap8">
+      <b style={{ fontSize: 15 }}>메모</b>
+      <button className="note-view" onClick={() => { setText(note); setErr(''); setOpen(true); }}>
+        {note ? note : <span className="muted">예약번호, 수하물 규정, 좌석 같은 걸 적어두세요</span>}
+      </button>
+      {open && (
+        <div className="sheet-wrap" role="dialog" aria-modal="true" aria-label="메모" onClick={() => setOpen(false)}>
+          <div className="sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-head"><b>메모</b><button className="link-btn" onClick={() => setOpen(false)}>닫기</button></div>
+            <div className="sheet-body">
+              <textarea className="input note-area" autoFocus value={text} onChange={(e) => setText(e.target.value)}
+                placeholder={'예: 예약번호 AB1234\n수하물 23kg 1개 포함\n좌석 32A, 32B'} />
+              {err && <p className="error" role="alert">{err}</p>}
+            </div>
+            <div className="sheet-foot"><button className="btn grow" disabled={busy} onClick={save}>저장</button></div>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

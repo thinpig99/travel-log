@@ -22,7 +22,14 @@ const hm = (at: string) => (at.length >= 16 ? at.slice(11, 16) : '');
 const md = (at: string) => (at.length >= 10 ? `${Number(at.slice(5, 7))}/${Number(at.slice(8, 10))}` : '');
 
 /** 항공권 항목: 확정 항공편(보기 카드) + 후보(한 줄 요약), 입력은 시트에서 */
-export default function FlightsPanel({ trip, onStatus }: { trip: Trip; onStatus: (s: PrepStatus) => void }) {
+export default function FlightsPanel({ trip, itemId, cost, onStatus, onCost }: {
+  trip: Trip; itemId: string; cost: number | null; onStatus: (s: PrepStatus) => void; onCost: (n: number | null) => void;
+}) {
+  const saveCost = async (n: number | null) => {
+    if (n === cost) return;
+    onCost(n);
+    await supabase.from('prep_items').update({ cost: n, currency: 'KRW', amount: null }).eq('id', itemId);
+  };
   const [airports, setAirports] = useState<Airports>({});
   const [confirmed, setConfirmed] = useState<Journey[] | null>(null);
   const [cands, setCands] = useState<Candidate[] | null>(null);
@@ -68,8 +75,9 @@ export default function FlightsPanel({ trip, onStatus }: { trip: Trip; onStatus:
           labels={[labels[i] ?? `여정 ${i + 1}`]}
           initial={[confirmed[i] ?? []]}
           airports={airports}
+          price={{ value: cost, label: '항공권 가격 (원, 전체 여정 합계)' }}
           onClose={() => setSheet(null)}
-          onSave={(js) => { const all = [...confirmed]; while (all.length <= i) all.push([]); all[i] = js[0]; return saveConfirmed(all); }}
+          onSave={async (js, price) => { const all = [...confirmed]; while (all.length <= i) all.push([]); all[i] = js[0]; await saveCost(price); return saveConfirmed(all); }}
           footer={() => confirmed[i]?.length ? (
             <button className="link-btn" style={{ color: 'var(--red-ink)', alignSelf: 'flex-start' }}
               onClick={() => saveConfirmed(confirmed.filter((_, k) => k !== i))}>이 여정 지우기</button>
@@ -103,11 +111,11 @@ export default function FlightsPanel({ trip, onStatus }: { trip: Trip; onStatus:
                 <span>원래 확정 항공편과 그 일정은 지워져요.</span>
                 <div className="row gap8" style={{ marginTop: 6 }}>
                   <button className="btn secondary small" onClick={() => setReplaceAsk(false)}>취소</button>
-                  <button className="btn small" onClick={async () => { await saveConfirmed(prune(cur.journeys)); setReplaceAsk(false); }}>바꾸기</button>
+                  <button className="btn small" onClick={async () => { await saveCost(cur.price); await saveConfirmed(prune(cur.journeys)); setReplaceAsk(false); }}>바꾸기</button>
                 </div>
               </div>
             ) : (
-              <button className="btn secondary block" onClick={() => (confirmed.some((j) => j.length) ? setReplaceAsk(true) : saveConfirmed(prune(cur.journeys)))}>이 후보로 확정하기</button>
+              <button className="btn secondary block" onClick={async () => { if (confirmed.some((j) => j.length)) return setReplaceAsk(true); await saveCost(cur.price); await saveConfirmed(prune(cur.journeys)); }}>이 후보로 확정하기</button>
             )}
             <button className="link-btn" style={{ color: 'var(--red-ink)', alignSelf: 'flex-start' }}
               onClick={async () => { await supabase.from('flight_options').delete().eq('id', c.id!); setSheet(null); setCands(await fetchCandidates(trip.id)); }}>후보 지우기</button>
@@ -147,7 +155,10 @@ export default function FlightsPanel({ trip, onStatus }: { trip: Trip; onStatus:
       </section>
 
       <section id="confirmed-flights" className="stack gap8">
-        <span className="row gap6" style={{ alignItems: 'center' }}><span className="chip-fix">확정</span><b style={{ fontSize: 15 }}>확정 항공편</b></span>
+        <div className="row between">
+          <span className="row gap6" style={{ alignItems: 'center' }}><span className="chip-fix">확정</span><b style={{ fontSize: 15 }}>확정 항공편</b></span>
+          {cost != null && <b style={{ fontSize: 15 }}>{cost.toLocaleString('ko-KR')}원</b>}
+        </div>
         <p className="xs muted">예약을 마친 항공편이에요. 일정 탭에 자동으로 들어가요.</p>
         {labels.map((label, i) => {
           const j = confirmed[i];

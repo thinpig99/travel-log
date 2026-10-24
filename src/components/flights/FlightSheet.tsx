@@ -10,7 +10,7 @@ export default function FlightSheet({ title, labels, initial, airports, price, o
   labels: string[];
   initial: Journey[];
   airports: Airports;
-  price?: { value: number | null };
+  price?: { value: number | null; label?: string };
   onSave: (journeys: Journey[], price: number | null) => Promise<string | null> | string | null;
   onClose: () => void;
   footer?: (current: { journeys: Journey[]; price: number | null }) => ReactNode;
@@ -106,7 +106,7 @@ export default function FlightSheet({ title, labels, initial, airports, price, o
             </section>
           ))}
           {price && (
-            <label className="ff"><span>가격 (원, 왕복 총액)</span>
+            <label className="ff"><span>{price.label ?? '가격 (원, 왕복 총액)'}</span>
               <input inputMode="numeric" value={priceText} placeholder="520,000"
                 onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); setPriceText(v ? Number(v).toLocaleString('ko-KR') : ''); }} />
             </label>

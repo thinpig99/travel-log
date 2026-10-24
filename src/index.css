@@ -299,3 +299,4 @@ textarea.input.note-area { min-height: 220px; line-height: 1.6; }
 
 .ff select { -webkit-appearance: menulist; appearance: auto; }
 .ftl-time.xs { white-space: nowrap; }
+.note-view { text-align: left; white-space: pre-wrap; padding: 14px; border-radius: 14px; background: #f4f6fb; border: 1px solid var(--line); font-size: 14px; line-height: 1.6; color: var(--ink); cursor: pointer; min-height: 56px; }
