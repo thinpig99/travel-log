@@ -23,7 +23,7 @@ export const STAGES: Record<number, string> = {
 /** 단계별 권장 시기: [시작, 끝] 출발 며칠 전 (음수는 여행 후) */
 export const STAGE_WHEN: Record<number, { label: string; from: number; to: number }> = {
   1: { label: '1년~3개월 전', from: 365, to: 90 },
-  2: { label: '6개월~1개월 전', from: 180, to: 30 },
+  2: { label: '9개월~1개월 전', from: 270, to: 30 },
   3: { label: '2개월~1주 전', from: 60, to: 7 },
   4: { label: '2주~3일 전', from: 14, to: 3 },
   5: { label: '1주 전~출발 전날', from: 7, to: 1 },
