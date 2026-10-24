@@ -103,7 +103,7 @@ export default function SettlePanel({ trip, onChange }: { trip: Trip; onChange: 
         );
       })()}
       <p className="xs muted">준비 항목의 비용과 일정 탭에 적은 비용을 합쳤어요. 항공권·숙소처럼 일정에 자동으로 들어간 항목은 두 번 세지 않아요.</p>
-      <button className={`done-toggle ${settled ? 'on' : ''}`} style={{ color: 'var(--brand-ink)' }} onClick={toggleSettled}>
+      <button className={`done-toggle ${settled ? 'on' : ''}`} style={settled ? undefined : { color: 'var(--brand-ink)' }} onClick={toggleSettled}>
         {settled ? '정산을 마쳤어요' : '정산을 마쳤으면 눌러주세요'}
       </button>
       {ended && <Link to={`/trips/${trip.id}/finish`} className="link-btn" style={{ alignSelf: 'flex-start' }}>게시판에 공개하기 ›</Link>}
