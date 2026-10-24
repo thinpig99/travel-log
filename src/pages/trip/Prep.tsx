@@ -72,17 +72,18 @@ export default function Prep({ trip, items, setItems }: Props) {
     const w = STAGE_WHEN[stage];
     return dStart <= w.from && dStart >= w.to;
   };
-  const doneAll = items.filter((i) => i.status === 'done').length;
-  const pct = items.length ? Math.round((doneAll / items.length) * 100) : 0;
+  const prepItems = items.filter((i) => i.stage <= 5);
+  const doneAll = prepItems.filter((i) => i.status === 'done').length;
+  const pct = prepItems.length ? Math.round((doneAll / prepItems.length) * 100) : 0;
 
   return (
     <div className="prep-wrap">
       <div className="prep-sum">
-        <div className="row between small"><span>준비 진행률</span><b>{doneAll} / {items.length} 완료</b></div>
+        <div className="row between small"><span>준비 진행률</span><b>{doneAll} / {prepItems.length} 완료</b></div>
         <div className="prep-bar"><i style={{ width: `${pct}%` }} /></div>
       </div>
       {err && <p className="error" role="alert">{err}</p>}
-      {[1, 2, 3, 4, 5, 6].map((stage) => {
+      {[1, 2, 3, 4, 5].map((stage) => {
         const list = items.filter((i) => i.stage === stage).sort((a, b) => a.sort - b.sort);
         const done = list.filter((i) => i.status === 'done').length;
         const complete = list.length > 0 && done === list.length;

@@ -2,12 +2,18 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { todayStr } from '../../lib/format';
-import { STAGES, type PrepStatus, type Trip } from '../../lib/types';
+import { STAGES, type Trip } from '../../lib/types';
 
 interface Row { stage: number; title: string; cost: number | null }
 
 /** 정산: 준비 비용과 일정 비용을 모아 1인당 금액까지 보여준다 */
-export default function SettlePanel({ trip, itemId, status, onStatus }: { trip: Trip; itemId: string; status: PrepStatus; onStatus: (s: PrepStatus) => void }) {
+export default function SettlePanel({ trip, onChange }: { trip: Trip; onChange: () => void }) {
+  const [settled, setSettled] = useState(!!trip.settled);
+  const toggleSettled = async () => {
+    setSettled(!settled);
+    await supabase.from('trips').update({ settled: !settled }).eq('id', trip.id);
+    onChange();
+  };
   const [prep, setPrep] = useState<Row[] | null>(null);
   const [sched, setSched] = useState<number>(0);
   const [paid, setPaid] = useState<Record<string, number>>({});
@@ -21,12 +27,14 @@ export default function SettlePanel({ trip, itemId, status, onStatus }: { trip: 
       for (const r of rows) if (r.payer && r.cost) p[r.payer] = (p[r.payer] ?? 0) + r.cost;
       setPaid(p);
     });
-  }, [trip.id, itemId]);
+  }, [trip.id]);
 
   if (!prep) return <p className="small muted">불러오는 중</p>;
   const items = prep.filter((r) => (r.cost ?? 0) > 0 && r.stage !== 6);
   const prepSum = items.reduce((s, r) => s + (r.cost ?? 0), 0);
-  const total = prepSum + sched;
+  // 간단 기록에서 자세히 기록으로 바꾼 여행: 예전에 적은 총비용
+  const legacy = prepSum === 0 && sched === 0 ? (prep.find((r) => r.stage === 6)?.cost ?? trip.total_cost ?? 0) : 0;
+  const total = prepSum + sched + legacy;
   const head = Math.max(1, trip.headcount);
   const ended = !!trip.end_date && trip.end_date < todayStr();
 
@@ -45,6 +53,12 @@ export default function SettlePanel({ trip, itemId, status, onStatus }: { trip: 
             <b>{(r.cost ?? 0).toLocaleString('ko-KR')}원</b>
           </div>
         ))}
+        {legacy > 0 && (
+          <div className="check-row" style={{ justifyContent: 'space-between' }}>
+            <span className="stack" style={{ gap: 2 }}><span>기록해 둔 총비용</span><span className="xs muted">간단 기록 때 적은 금액</span></span>
+            <b>{legacy.toLocaleString('ko-KR')}원</b>
+          </div>
+        )}
         <div className="check-row" style={{ justifyContent: 'space-between' }}>
           <span className="stack" style={{ gap: 2 }}><span>여행 중 쓴 돈</span><span className="xs muted">일정 탭에 적은 비용</span></span>
           <b>{sched.toLocaleString('ko-KR')}원</b>
@@ -89,9 +103,8 @@ export default function SettlePanel({ trip, itemId, status, onStatus }: { trip: 
         );
       })()}
       <p className="xs muted">준비 항목의 비용과 일정 탭에 적은 비용을 합쳤어요. 항공권·숙소처럼 일정에 자동으로 들어간 항목은 두 번 세지 않아요.</p>
-      <button className={`done-toggle ${status === 'done' ? 'on' : ''}`} style={{ color: 'var(--brand-ink)' }}
-        onClick={() => onStatus(status === 'done' ? (ended ? 'doing' : 'todo') : 'done')}>
-        {status === 'done' ? '정산을 마쳤어요' : '정산을 마쳤으면 눌러주세요'}
+      <button className={`done-toggle ${settled ? 'on' : ''}`} style={{ color: 'var(--brand-ink)' }} onClick={toggleSettled}>
+        {settled ? '정산을 마쳤어요' : '정산을 마쳤으면 눌러주세요'}
       </button>
       {ended && <Link to={`/trips/${trip.id}/finish`} className="link-btn" style={{ alignSelf: 'flex-start' }}>여행 마무리하고 공개하기 ›</Link>}
     </section>

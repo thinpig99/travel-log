@@ -13,7 +13,6 @@ import { isArrivalItem } from '../lib/entry';
 import FlightsPanel from '../components/flights/FlightsPanel';
 import { isFlightItem } from '../lib/flights';
 import EntriesPanel from '../components/entries/EntriesPanel';
-import SettlePanel from '../components/entries/SettlePanel';
 import { isSettleItem, kindOf } from '../lib/entries';
 import { isPassportItem } from '../lib/passport';
 
@@ -152,7 +151,7 @@ function Editor({ trip, item, onBack }: { trip: Trip; item: PrepItem; onBack: ()
         {visaItem && <VisaInfo trip={trip} itemId={item.id} onStatus={onFlightStatus} />}
         {arrivalItem && <ArrivalInfo trip={trip} itemId={item.id} onStatus={onFlightStatus} />}
         {kind && <EntriesPanel trip={trip} itemId={item.id} kind={kind} onStatus={onFlightStatus} onCost={onEntryCost} />}
-        {settleItem && <SettlePanel trip={trip} itemId={item.id} status={shownStatus} onStatus={onFlightStatus} />}
+        {settleItem && <p className="notice small">정산은 여행 화면의 "정산" 탭으로 옮겼어요.</p>}
 
         {flightItem && <FlightsPanel trip={trip} itemId={item.id} cost={flightCost} onStatus={onFlightStatus} onCost={setFlightCost} />}
         {special && <NoteBlock itemId={item.id} note={note} onSaved={setNote} hint={flightItem ? '예약번호, 수하물 규정, 좌석 같은 걸 적어두세요' : '참고할 내용을 자유롭게 적어두세요'} />}

@@ -77,6 +77,7 @@ export interface Trip {
   created_at: string;
   flight_mode?: string;
   members?: string[];
+  settled?: boolean;
   trip_cities?: { sort: number; arrive?: string | null; depart?: string | null; note?: string; cities: CityRef }[];
   prep_items?: { status: PrepStatus; cost: number | null }[];
 }

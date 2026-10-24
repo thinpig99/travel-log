@@ -12,11 +12,12 @@ import Overview from './trip/Overview';
 import Prep from './trip/Prep';
 import Schedule from './trip/Schedule';
 import Info from './trip/Info';
+import SettlePanel from '../components/entries/SettlePanel';
 import { todayStr } from '../lib/format';
 import { Link } from 'react-router-dom';
 
-type Tab = 'overview' | 'prep' | 'schedule' | 'info';
-const TABS: Tab[] = ['overview', 'prep', 'schedule', 'info'];
+type Tab = 'overview' | 'prep' | 'schedule' | 'info' | 'settle';
+const TABS: Tab[] = ['overview', 'prep', 'schedule', 'info', 'settle'];
 
 export default function TripPage() {
   const { id } = useParams();
@@ -80,7 +81,7 @@ export default function TripPage() {
         ) : (
           <>
             <div className="tabs" role="tablist">
-              {([['overview', '개요'], ['prep', '준비'], ['schedule', '일정'], ['info', '정보']] as [Tab, string][]).map(([k, l]) => (
+              {([['overview', '개요'], ['prep', '준비'], ['schedule', '일정'], ['info', '정보'], ['settle', '정산']] as [Tab, string][]).map(([k, l]) => (
                 <button key={k} role="tab" aria-selected={tab === k} className={`tab ${tab === k ? 'on' : ''}`} onClick={() => setTab(k)}>{l}</button>
               ))}
             </div>
@@ -89,6 +90,7 @@ export default function TripPage() {
             {tab === 'prep' && <Prep trip={trip} items={prep} setItems={setPrep} />}
             {tab === 'schedule' && <Schedule trip={trip} items={sched} setItems={setSched} />}
             {tab === 'info' && <Info trip={trip} />}
+            {tab === 'settle' && <SettlePanel trip={trip} onChange={load} />}
             </SwipeTabs>
           </>
         )}
