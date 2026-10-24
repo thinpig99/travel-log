@@ -129,7 +129,7 @@ export default function Home() {
           ))}
           {cityFilter == null && past.length > limit && (
             <button className="more-btn" onClick={() => setLimit(limit + 10)}>
-              더 보기 <span className="muted">({past.length - limit}개 남음)</span>
+              더 보기
             </button>
           )}
           {cityFilter == null && limit > PAGE && past.length <= limit && past.length > PAGE && (
